@@ -21,14 +21,15 @@ fn main() {
     let size = user.serialize(&mut buffer);
     
     println!("Serialized {} bytes", size);
-    println!("Binary: {:?}", &buffer.buffer()[..size]);
+    println!("Binary: {:?}", buffer.data());
 
     // Write to file for PHP to read
-    std::fs::write("/tmp/rust_to_php.bin", &buffer.buffer()[..size]).unwrap();
+    std::fs::write("/tmp/rust_to_php.bin", buffer.data()).unwrap();
     println!("\n✓ Wrote binary to /tmp/rust_to_php.bin");
 
     // Deserialize
-    let read_buffer = ReadBuffer::new(buffer.buffer().to_vec());
+    let mut read_buffer = ReadBuffer::new();
+    read_buffer.attach_buffer(buffer.data(), 0, buffer.size());
     let decoded = test::user::User::deserialize(&read_buffer);
 
     println!("\nDecoded: id={}, name={}, side={:?}", decoded.id, decoded.name, decoded.side);
@@ -37,5 +38,17 @@ fn main() {
     assert_eq!(user.name, decoded.name);
     
     println!("\n✓ Rust round-trip test passed!");
+
+    // Try reading PHP binary if exists
+    if std::path::Path::new("/tmp/php_to_rust.bin").exists() {
+        println!("\n=== Reading PHP Binary ===");
+        let php_binary = std::fs::read("/tmp/php_to_rust.bin").unwrap();
+        let mut php_buffer = ReadBuffer::new();
+        php_buffer.attach_buffer(&php_binary, 0, php_binary.len());
+        let php_user = test::user::User::deserialize(&php_buffer);
+        
+        println!("PHP→Rust: id={}, name={}, side={:?}", php_user.id, php_user.name, php_user.side);
+        println!("✓ Successfully read PHP binary!");
+    }
 }
 

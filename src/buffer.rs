@@ -224,6 +224,14 @@ impl WriteBuffer {
         let bytes = value.to_le_bytes();
         self.buffer[self.offset + offset..self.offset + offset + 8].copy_from_slice(&bytes);
     }
+
+    #[inline]
+    pub fn write_string(&mut self, offset: usize, value: &str) {
+        let len = value.len() as i32;
+        self.write_i32(offset, len);
+        let bytes = value.as_bytes();
+        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + bytes.len()].copy_from_slice(bytes);
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -376,6 +384,14 @@ impl ReadBuffer {
     pub fn read_f64(&self, offset: usize) -> f64 {
         let bytes = &self.buffer[self.offset + offset..self.offset + offset + 8];
         f64::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn read_string(&self, offset: usize) -> String {
+        let len = self.read_i32(offset) as usize;
+        let bytes = &self.buffer[self.offset + offset + 4..self.offset + offset + 4 + len];
+        String::from_utf8_lossy(bytes).to_string()
     }
 }
 
