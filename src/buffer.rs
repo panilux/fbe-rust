@@ -232,6 +232,42 @@ impl WriteBuffer {
         let bytes = value.as_bytes();
         self.buffer[self.offset + offset + 4..self.offset + offset + 4 + bytes.len()].copy_from_slice(bytes);
     }
+
+    /// Write timestamp as uint64 (nanoseconds since epoch)
+    #[inline]
+    pub fn write_timestamp(&mut self, offset: usize, value: u64) {
+        self.write_u64(offset, value);
+    }
+
+    /// Write UUID as 16 bytes (big-endian format)
+    #[inline]
+    pub fn write_uuid(&mut self, offset: usize, value: &[u8; 16]) {
+        self.buffer[self.offset + offset..self.offset + offset + 16].copy_from_slice(value);
+    }
+
+    /// Write bytes (size-prefixed binary data)
+    #[inline]
+    pub fn write_bytes(&mut self, offset: usize, value: &[u8]) {
+        let len = value.len() as i32;
+        self.write_i32(offset, len);
+        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + value.len()].copy_from_slice(value);
+    }
+
+    /// Write decimal as 16 bytes (.NET Decimal format)
+    /// Format: bytes 0-11 = unscaled value (96-bit), byte 14 = scale, byte 15 = sign
+    #[inline]
+    pub fn write_decimal(&mut self, offset: usize, value: i128, scale: u8, negative: bool) {
+        // Write unscaled value to bytes 0-11 (96-bit little-endian)
+        let bytes = value.to_le_bytes();
+        self.buffer[self.offset + offset..self.offset + offset + 12].copy_from_slice(&bytes[..12]);
+        // Bytes 12-13 are unused (zero)
+        self.buffer[self.offset + offset + 12] = 0;
+        self.buffer[self.offset + offset + 13] = 0;
+        // Byte 14 = scale
+        self.buffer[self.offset + offset + 14] = scale;
+        // Byte 15 = sign
+        self.buffer[self.offset + offset + 15] = if negative { 0x80 } else { 0x00 };
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -392,6 +428,48 @@ impl ReadBuffer {
         let len = self.read_i32(offset) as usize;
         let bytes = &self.buffer[self.offset + offset + 4..self.offset + offset + 4 + len];
         String::from_utf8_lossy(bytes).to_string()
+    }
+
+    /// Read timestamp as uint64 (nanoseconds since epoch)
+    #[must_use]
+    #[inline]
+    pub fn read_timestamp(&self, offset: usize) -> u64 {
+        self.read_u64(offset)
+    }
+
+    /// Read UUID as 16 bytes
+    #[must_use]
+    #[inline]
+    pub fn read_uuid(&self, offset: usize) -> [u8; 16] {
+        let bytes = &self.buffer[self.offset + offset..self.offset + offset + 16];
+        bytes.try_into().unwrap()
+    }
+
+    /// Read bytes (size-prefixed binary data)
+    #[must_use]
+    #[inline]
+    pub fn read_bytes(&self, offset: usize) -> Vec<u8> {
+        let len = self.read_i32(offset) as usize;
+        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + len].to_vec()
+    }
+
+    /// Read decimal as (value, scale, negative)
+    /// Returns: (unscaled i128 value, scale u8, is_negative bool)
+    #[must_use]
+    #[inline]
+    pub fn read_decimal(&self, offset: usize) -> (i128, u8, bool) {
+        // Read 96-bit unscaled value from bytes 0-11
+        let mut value_bytes = [0u8; 16];
+        value_bytes[..12].copy_from_slice(&self.buffer[self.offset + offset..self.offset + offset + 12]);
+        let value = i128::from_le_bytes(value_bytes);
+        
+        // Read scale from byte 14
+        let scale = self.buffer[self.offset + offset + 14];
+        
+        // Read sign from byte 15
+        let negative = (self.buffer[self.offset + offset + 15] & 0x80) != 0;
+        
+        (value, scale, negative)
     }
 }
 
