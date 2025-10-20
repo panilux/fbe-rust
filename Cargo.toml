@@ -1,0 +1,14 @@
+[package]
+name = "fbe"
+version = "0.1.0"
+edition = "2024"
+authors = ["Panilux Team"]
+description = "Fast Binary Encoding runtime library for Rust"
+license = "MIT"
+repository = "https://gitlab.mit.sh/panilux/fbe-rust"
+keywords = ["serialization", "binary", "encoding", "fbe"]
+categories = ["encoding"]
+
+[dependencies]
+
+[dev-dependencies]
