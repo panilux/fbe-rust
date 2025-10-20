@@ -249,6 +249,7 @@ impl Generator {
         let file_name = format!("{}/{}.rs", output_dir, to_snake_case(&struct_def.name));
 
         let mut code = format!("//! {} struct\n\n", struct_def.name);
+        code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n\n");
         code.push_str("#[derive(Debug, Clone, Default)]\n");
         code.push_str(&format!("pub struct {} {{\n", struct_def.name));
         
@@ -256,11 +257,56 @@ impl Generator {
             let rust_type = self.map_field_type(field);
             code.push_str(&format!("    pub {}: {},\n", field.name, rust_type));
         }
+        code.push_str("}\n\n");
+
+        // Add serialization methods
+        code.push_str(&format!("impl {} {{\n", struct_def.name));
+        
+        // Serialize method
+        code.push_str("    pub fn serialize(&self, buffer: &mut WriteBuffer) -> usize {\n");
+        code.push_str("        let mut offset = 0;\n");
+        for field in &struct_def.fields {
+            code.push_str(&self.generate_serialize_field(field));
+        }
+        code.push_str("        offset\n");
+        code.push_str("    }\n\n");
+
+        // Deserialize method
+        code.push_str("    pub fn deserialize(buffer: &ReadBuffer) -> Self {\n");
+        code.push_str("        let mut offset = 0;\n");
+        code.push_str("        Self {\n");
+        for field in &struct_def.fields {
+            code.push_str(&self.generate_deserialize_field(field));
+        }
+        code.push_str("        }\n");
+        code.push_str("    }\n");
         code.push_str("}\n");
 
         fs::write(&file_name, code)
             .map_err(|e| format!("Failed to write {}: {}", file_name, e))?;
         Ok(())
+    }
+
+    fn generate_serialize_field(&self, field: &FieldDef) -> String {
+        let write_method = get_write_method(&field.fbe_type);
+        let size = get_type_size(&field.fbe_type);
+        
+        if field.fbe_type == "string" {
+            format!("        buffer.write_string(offset, &self.{});\n        offset += 4 + self.{}.len();\n", field.name, field.name)
+        } else {
+            format!("        buffer.{}(offset, self.{});\n        offset += {};\n", write_method, field.name, size)
+        }
+    }
+
+    fn generate_deserialize_field(&self, field: &FieldDef) -> String {
+        let read_method = get_read_method(&field.fbe_type);
+        
+        if field.fbe_type == "string" {
+            format!("            {}: {{ let val = buffer.{}(offset); offset += 4 + val.len(); val }},\n", field.name, read_method)
+        } else {
+            let size = get_type_size(&field.fbe_type);
+            format!("            {}: {{ let val = buffer.{}(offset); offset += {}; val }},\n", field.name, read_method, size)
+        }
     }
 
     fn map_field_type(&self, field: &FieldDef) -> String {
@@ -342,3 +388,49 @@ fn escape_keyword(s: &str) -> String {
     }
 }
 
+
+fn get_write_method(fbe_type: &str) -> String {
+    match fbe_type {
+        "bool" => "write_bool",
+        "byte" | "int8" => "write_i8",
+        "uint8" => "write_u8",
+        "int16" => "write_i16",
+        "uint16" => "write_u16",
+        "int32" => "write_i32",
+        "uint32" => "write_u32",
+        "int64" => "write_i64",
+        "uint64" => "write_u64",
+        "float" => "write_f32",
+        "double" => "write_f64",
+        "string" => "write_string",
+        _ => "write_i32",
+    }.to_string()
+}
+
+fn get_read_method(fbe_type: &str) -> String {
+    match fbe_type {
+        "bool" => "read_bool",
+        "byte" | "int8" => "read_i8",
+        "uint8" => "read_u8",
+        "int16" => "read_i16",
+        "uint16" => "read_u16",
+        "int32" => "read_i32",
+        "uint32" => "read_u32",
+        "int64" => "read_i64",
+        "uint64" => "read_u64",
+        "float" => "read_f32",
+        "double" => "read_f64",
+        "string" => "read_string",
+        _ => "read_i32",
+    }.to_string()
+}
+
+fn get_type_size(fbe_type: &str) -> usize {
+    match fbe_type {
+        "bool" | "byte" | "int8" | "uint8" => 1,
+        "int16" | "uint16" => 2,
+        "int32" | "uint32" | "float" => 4,
+        "int64" | "uint64" | "double" => 8,
+        _ => 4,
+    }
+}
