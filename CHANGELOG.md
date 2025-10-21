@@ -1,3 +1,16 @@
+## [0.1.0] - 2025-10-21
+
+### Added
+- **Binary Compatibility Tests:** Cross-platform PHP ↔ Rust verification
+- **THE CHALLENGE:** Passed! %100 binary compatible with PHP implementation
+- **hex crate:** For binary debugging
+
+### Verified
+- ✅ Rust → Rust: PASS
+- ✅ PHP → Rust: PASS (reads PHP binary)
+- ✅ Rust → PHP: PASS (PHP reads Rust binary)
+- ✅ Binary format identical (byte-for-byte)
+
 ## [0.0.9] - 2025-10-21
 
 ### Added
