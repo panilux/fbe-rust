@@ -1,1 +1,60 @@
-/target
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Test outputs
+*.bin
+*.dat
+/tmp/
+/temp/
+
+# IDE - IntelliJ IDEA / CLion / RustRover
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+
+# Build
+build/
+dist/
+
+# Coverage
+*.profraw
+*.profdata
+coverage/
+tarpaulin-report.html
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Generated files
+test_gen/
+*.generated.rs
+
+# Debug
+debug/
+*.dSYM/
+
