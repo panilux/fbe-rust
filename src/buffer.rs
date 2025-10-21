@@ -268,6 +268,66 @@ impl WriteBuffer {
         // Byte 15 = sign
         self.buffer[self.offset + offset + 15] = if negative { 0x80 } else { 0x00 };
     }
+
+    /// Write vector of i32 values
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    pub fn write_vector_i32(&mut self, offset: usize, values: &[i32]) -> usize {
+        let size = values.len();
+        let data_size = 4 + (size * 4); // 4 bytes size + elements
+        let data_offset = self.allocate(data_size);
+        
+        // Write pointer at offset
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        
+        // Write size at data_offset
+        self.write_u32(data_offset - self.offset, size as u32);
+        
+        // Write elements
+        for (i, &value) in values.iter().enumerate() {
+            self.write_i32(data_offset - self.offset + 4 + (i * 4), value);
+        }
+        
+        data_size
+    }
+
+    /// Write fixed-size array of i32 values (inline, no pointer)
+    /// Format: N × 4 bytes (elements only)
+    #[inline]
+    pub fn write_array_i32(&mut self, offset: usize, values: &[i32]) {
+        for (i, &value) in values.iter().enumerate() {
+            self.write_i32(offset + (i * 4), value);
+        }
+    }
+
+    /// Write map of i32 key-value pairs
+    /// Format: 4-byte offset pointer → (4-byte size + key-value pairs)
+    pub fn write_map_i32(&mut self, offset: usize, entries: &[(i32, i32)]) -> usize {
+        let size = entries.len();
+        let data_size = 4 + (size * 8); // 4 bytes size + (key+value) pairs
+        let data_offset = self.allocate(data_size);
+        
+        // Write pointer at offset
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        
+        // Write size at data_offset
+        self.write_u32(data_offset - self.offset, size as u32);
+        
+        // Write key-value pairs
+        for (i, &(key, value)) in entries.iter().enumerate() {
+            self.write_i32(data_offset - self.offset + 4 + (i * 8), key);
+            self.write_i32(data_offset - self.offset + 4 + (i * 8) + 4, value);
+        }
+        
+        data_size
+    }
+
+    /// Write set of i32 values (unique values, same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    /// Note: Uniqueness constraint enforced at application level
+    #[inline]
+    pub fn write_set_i32(&mut self, offset: usize, values: &[i32]) -> usize {
+        self.write_vector_i32(offset, values)
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -470,6 +530,72 @@ impl ReadBuffer {
         let negative = (self.buffer[self.offset + offset + 15] & 0x80) != 0;
         
         (value, scale, negative)
+    }
+
+    /// Read vector of i32 values
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    #[must_use]
+    pub fn read_vector_i32(&self, offset: usize) -> Vec<i32> {
+        // Read pointer
+        let data_offset = self.read_u32(offset) as usize;
+        if data_offset == 0 {
+            return Vec::new();
+        }
+        
+        // Read size
+        let size = self.read_u32(data_offset) as usize;
+        
+        // Read elements
+        let mut result = Vec::with_capacity(size);
+        for i in 0..size {
+            result.push(self.read_i32(data_offset + 4 + (i * 4)));
+        }
+        
+        result
+    }
+
+    /// Read fixed-size array of i32 values (inline, no pointer)
+    /// Format: N × 4 bytes (elements only)
+    #[must_use]
+    #[inline]
+    pub fn read_array_i32(&self, offset: usize, size: usize) -> Vec<i32> {
+        let mut result = Vec::with_capacity(size);
+        for i in 0..size {
+            result.push(self.read_i32(offset + (i * 4)));
+        }
+        result
+    }
+
+    /// Read map of i32 key-value pairs
+    /// Format: 4-byte offset pointer → (4-byte size + key-value pairs)
+    #[must_use]
+    pub fn read_map_i32(&self, offset: usize) -> Vec<(i32, i32)> {
+        // Read pointer
+        let data_offset = self.read_u32(offset) as usize;
+        if data_offset == 0 {
+            return Vec::new();
+        }
+        
+        // Read size
+        let size = self.read_u32(data_offset) as usize;
+        
+        // Read key-value pairs
+        let mut result = Vec::with_capacity(size);
+        for i in 0..size {
+            let key = self.read_i32(data_offset + 4 + (i * 8));
+            let value = self.read_i32(data_offset + 4 + (i * 8) + 4);
+            result.push((key, value));
+        }
+        
+        result
+    }
+
+    /// Read set of i32 values (same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    #[must_use]
+    #[inline]
+    pub fn read_set_i32(&self, offset: usize) -> Vec<i32> {
+        self.read_vector_i32(offset)
     }
 }
 
