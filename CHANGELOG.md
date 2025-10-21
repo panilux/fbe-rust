@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.4] - 2025-10-21
+
+### Added
+- **vector<T>** collection support (dynamic arrays with pointer-based storage)
+- **array[N]** collection support (fixed-size inline arrays)
+- **map<K,V>** collection support (key-value pairs)
+- **set<T>** collection support (unique values, same format as vector)
+- Individual collection tests for each type
+- Cross-platform vector test (Rust ↔ PHP)
+
+### Implemented
+- `write_vector_i32()` / `read_vector_i32()` for dynamic arrays
+- `write_array_i32()` / `read_array_i32()` for fixed-size arrays
+- `write_map_i32()` / `read_map_i32()` for key-value maps
+- `write_set_i32()` / `read_set_i32()` for unique value sets
+
+### Verified
+- ✅ All collections working in Rust
+- ✅ Cross-platform binary compatibility for individual collections
+- ✅ Vector cross-platform test passed
+
+### Note
+- Combined collection tests require struct-based serialization pattern
+- Current implementation supports i32 types, extensible to other types
+
 ## [0.0.3] - 2025-10-21
 
 ### Added
