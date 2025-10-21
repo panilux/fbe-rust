@@ -151,3 +151,16 @@ All notable changes to this project will be documented in this file.
 - Basic test suite
 
 HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
+
+## [0.1.1] - 2025-10-21
+
+### Added
+- Optional type support (Type?)
+- write_optional_i32(), write_optional_string(), write_optional_f64()
+- read_optional_i32(), read_optional_string(), read_optional_f64()
+- has_value() method for null checking
+
+### Format
+- 1 byte: has_value flag (0=null, 1=has value)
+- 4 bytes: pointer to data
+- At pointer: actual value

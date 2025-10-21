@@ -404,6 +404,44 @@ impl WriteBuffer {
         }
         values.len() * 8
     }
+
+    // Optional types
+    pub fn write_optional_i32(&mut self, offset: usize, value: Option<i32>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let data_offset = self.allocate(4);  // Allocate for i32
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_i32(data_offset, v);
+            }
+        }
+    }
+
+    pub fn write_optional_string(&mut self, offset: usize, value: Option<&str>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let len = v.len();
+                let data_offset = self.allocate(4 + len);  // Allocate for length + string
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_string(data_offset, v);
+            }
+        }
+    }
+
+    pub fn write_optional_f64(&mut self, offset: usize, value: Option<f64>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let data_offset = self.allocate(8);  // Allocate for f64
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_f64(data_offset, v);
+            }
+        }
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -763,6 +801,35 @@ impl ReadBuffer {
             values.push(self.read_f64(offset + (i * 8)));
         }
         values
+    }
+
+    // Optional types
+    pub fn has_value(&self, offset: usize) -> bool {
+        self.read_u8(offset) != 0
+    }
+
+    pub fn read_optional_i32(&self, offset: usize) -> Option<i32> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_i32(data_offset))
+    }
+
+    pub fn read_optional_string(&self, offset: usize) -> Option<String> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_string(data_offset))
+    }
+
+    pub fn read_optional_f64(&self, offset: usize) -> Option<f64> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_f64(data_offset))
     }
 }
 
