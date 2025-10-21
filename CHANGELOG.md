@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.6] - 2025-10-21
+
+### Added
+- **Complete FieldModel Library:** All primitive and complex type field models
+  - Primitives: Bool, I8-64, U8-64, F32, F64
+  - Complex: String, Timestamp, UUID, Bytes, Decimal
+- **Macro-based Implementation:** Zero-cost abstractions for primitive types
+- **Comprehensive Test Suite:** test_field_model.rs testing all field models
+- **Modern Rust Patterns:** Trait-based, lifetime-safe implementations
+
+### Verified
+- ✅ All field models working correctly
+- ✅ Zero-cost abstractions (compile-time optimizations)
+- ✅ Lifetime-safe buffer references
+
 ## [0.0.5] - 2025-10-21
 
 ### Added
