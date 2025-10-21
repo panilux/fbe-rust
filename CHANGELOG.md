@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.7] - 2025-10-21
+
+### Added
+- **Collection Field Models:** Vector, Array, Map, Set
+  - FieldModelVectorI32: Dynamic arrays with pointer-based storage
+  - FieldModelArrayI32: Fixed-size arrays with inline storage
+  - FieldModelMapI32: Key-value pairs (HashMap integration)
+  - FieldModelSetI32: Unique values (HashSet integration)
+- **Comprehensive Test Suite:** test_field_model_collections.rs
+- **extra() method:** Calculates dynamic collection sizes from buffer
+
+### Verified
+- ✅ All 4 collection field models working
+- ✅ HashMap/HashSet integration
+- ✅ Zero-cost abstractions maintained
+
 ## [0.0.6] - 2025-10-21
 
 ### Added

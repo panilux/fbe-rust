@@ -6,6 +6,7 @@
 
 pub mod buffer;
 pub mod field_model;
+pub mod field_model_collections;
 pub mod model;
 
 pub use buffer::{ReadBuffer, WriteBuffer};
