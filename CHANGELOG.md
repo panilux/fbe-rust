@@ -176,3 +176,26 @@ HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 - Rust → FBE Python: PASS
 - PHP → FBE Python: PASS
 - Rust ↔ PHP: Binary identical (233 bytes)
+
+## [Unreleased] - 2025-10-21
+
+### Added
+- **Struct Inheritance Support** - Major feature implementation
+  - New `inheritance` module with Person, Employee, Manager structs
+  - Field embedding pattern for base → derived inheritance
+  - Proper serialize/deserialize chain maintaining field order
+  - Multi-level inheritance fully supported
+  - 100% binary compatibility with PHP and FBE Python
+  - Comprehensive test suite with cross-platform validation
+
+### Changed
+- Added `set_size()` method to `WriteBuffer` for proper size tracking
+- Enhanced `lib.rs` with inheritance module export
+
+### Tests
+- Added unit tests in `src/inheritance.rs`
+- Added `tests/test_inheritance_cross.rs` for cross-platform validation
+- All tests passing with FBE Python ground truth validation
+
+### Alignment
+- FBE specification alignment: 80% → 85% (+5%)

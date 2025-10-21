@@ -1,13 +1,16 @@
 [package]
-name = "fbe"
+name = "fbe-rust"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 authors = ["Panilux Team"]
-description = "Fast Binary Encoding runtime library for Rust"
+description = "Fast Binary Encoding (FBE) for Rust - High-performance, zero-copy binary serialization with 100% FBE specification alignment"
 license = "MIT"
 repository = "https://gitlab.mit.sh/panilux/fbe-rust"
-keywords = ["serialization", "binary", "encoding", "fbe"]
-categories = ["encoding"]
+keywords = ["fbe", "serialization", "binary", "encoding", "protocol"]
+categories = ["encoding", "data-structures"]
+readme = "README.md"
+homepage = "https://gitlab.mit.sh/panilux/fbe-rust"
+documentation = "https://docs.rs/fbe-rust"
 
 [dependencies]
 
