@@ -1,10 +1,9 @@
 /*!
  * Cross-platform inheritance test: Rust ↔ PHP
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use fbe::buffer::{WriteBuffer, ReadBuffer};
-use fbe::inheritance::{Person, Employee, Manager};
+use fbe::buffer::{ReadBuffer, WriteBuffer};
+use fbe::inheritance::{Employee, Manager, Person};
 use std::fs;
 
 #[test]
@@ -15,7 +14,7 @@ fn test_rust_write_php_read() {
         40,
         "Panilux".to_string(),
         95000.75,
-        10
+        10,
     );
 
     // Serialize to binary
@@ -48,19 +47,16 @@ fn test_php_write_rust_read() {
     assert_eq!(manager.team_size, 10);
 
     println!("✓ Rust read Manager from PHP");
-    println!("  Name: {}, Age: {}, Company: {}, Salary: {}, Team: {}",
-        manager.name, manager.age, manager.company, manager.salary, manager.team_size);
+    println!(
+        "  Name: {}, Age: {}, Company: {}, Salary: {}, Team: {}",
+        manager.name, manager.age, manager.company, manager.salary, manager.team_size
+    );
 }
 
 #[test]
 fn test_employee_cross_platform() {
     // Rust → PHP
-    let employee = Employee::new(
-        "Bob".to_string(),
-        35,
-        "Panilux".to_string(),
-        75000.50
-    );
+    let employee = Employee::new("Bob".to_string(), 35, "Panilux".to_string(), 75000.50);
 
     let mut buffer = WriteBuffer::new();
     buffer.reserve(100);
@@ -106,4 +102,3 @@ fn test_person_cross_platform() {
 
     println!("✓ Rust read Person from PHP");
 }
-

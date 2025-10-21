@@ -1,8 +1,6 @@
 //! Fast Binary Encoding collection field models
 //!
 //! Collection field models: Vector, Array, Map, Set
-//!
-//! HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 
 use crate::buffer::{ReadBuffer, WriteBuffer};
 use crate::field_model::FieldModel;
@@ -20,17 +18,23 @@ impl<'a> FieldModelVectorI32<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> Vec<i32> {
         ReadBuffer::from(self.buffer.to_vec()).read_vector_i32(self.offset)
     }
 }
 
 impl<'a> FieldModel for FieldModelVectorI32<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 } // Pointer only
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    } // Pointer only
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -41,18 +45,18 @@ impl<'a> FieldModel for FieldModelVectorI32<'a> {
             self.buffer[self.offset + 2],
             self.buffer[self.offset + 3],
         ]) as usize;
-        
+
         if pointer == 0 || self.buffer.len() < pointer + 4 {
             return 0;
         }
-        
+
         let count = u32::from_le_bytes([
             self.buffer[pointer],
             self.buffer[pointer + 1],
             self.buffer[pointer + 2],
             self.buffer[pointer + 3],
         ]) as usize;
-        
+
         4 + (count * 4) // size + elements
     }
 }
@@ -66,16 +70,22 @@ impl<'a> FieldModelVectorI32Mut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, values: &[i32]) {
         self.buffer.write_vector_i32(self.offset, values);
     }
 }
 
 impl<'a> FieldModel for FieldModelVectorI32Mut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 // ============================================================================
@@ -90,18 +100,28 @@ pub struct FieldModelArrayI32<'a> {
 
 impl<'a> FieldModelArrayI32<'a> {
     pub fn new(buffer: &'a [u8], offset: usize, count: usize) -> Self {
-        Self { buffer, offset, count }
+        Self {
+            buffer,
+            offset,
+            count,
+        }
     }
-    
+
     pub fn get(&self) -> Vec<i32> {
         ReadBuffer::from(self.buffer.to_vec()).read_array_i32(self.offset, self.count)
     }
 }
 
 impl<'a> FieldModel for FieldModelArrayI32<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { self.count * 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        self.count * 4
+    }
 }
 
 pub struct FieldModelArrayI32Mut<'a> {
@@ -112,21 +132,35 @@ pub struct FieldModelArrayI32Mut<'a> {
 
 impl<'a> FieldModelArrayI32Mut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize, count: usize) -> Self {
-        Self { buffer, offset, count }
+        Self {
+            buffer,
+            offset,
+            count,
+        }
     }
-    
+
     pub fn set(&mut self, values: &[i32]) {
         if values.len() != self.count {
-            panic!("Array size mismatch: expected {}, got {}", self.count, values.len());
+            panic!(
+                "Array size mismatch: expected {}, got {}",
+                self.count,
+                values.len()
+            );
         }
         self.buffer.write_array_i32(self.offset, values);
     }
 }
 
 impl<'a> FieldModel for FieldModelArrayI32Mut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { self.count * 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        self.count * 4
+    }
 }
 
 // ============================================================================
@@ -144,7 +178,7 @@ impl<'a> FieldModelMapI32<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> HashMap<i32, i32> {
         let pairs = ReadBuffer::from(self.buffer.to_vec()).read_map_i32(self.offset);
         pairs.into_iter().collect()
@@ -152,10 +186,16 @@ impl<'a> FieldModelMapI32<'a> {
 }
 
 impl<'a> FieldModel for FieldModelMapI32<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 } // Pointer only
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    } // Pointer only
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -166,18 +206,18 @@ impl<'a> FieldModel for FieldModelMapI32<'a> {
             self.buffer[self.offset + 2],
             self.buffer[self.offset + 3],
         ]) as usize;
-        
+
         if pointer == 0 || self.buffer.len() < pointer + 4 {
             return 0;
         }
-        
+
         let count = u32::from_le_bytes([
             self.buffer[pointer],
             self.buffer[pointer + 1],
             self.buffer[pointer + 2],
             self.buffer[pointer + 3],
         ]) as usize;
-        
+
         4 + (count * 8) // size + (key+value pairs)
     }
 }
@@ -191,7 +231,7 @@ impl<'a> FieldModelMapI32Mut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, map: &HashMap<i32, i32>) {
         // Convert HashMap to vec of (key, value) pairs
         let pairs: Vec<(i32, i32)> = map.iter().map(|(&k, &v)| (k, v)).collect();
@@ -200,9 +240,15 @@ impl<'a> FieldModelMapI32Mut<'a> {
 }
 
 impl<'a> FieldModel for FieldModelMapI32Mut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 // ============================================================================
@@ -220,7 +266,7 @@ impl<'a> FieldModelSetI32<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> HashSet<i32> {
         let vec = ReadBuffer::from(self.buffer.to_vec()).read_set_i32(self.offset);
         vec.into_iter().collect()
@@ -228,10 +274,16 @@ impl<'a> FieldModelSetI32<'a> {
 }
 
 impl<'a> FieldModel for FieldModelSetI32<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 } // Pointer only
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    } // Pointer only
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -242,18 +294,18 @@ impl<'a> FieldModel for FieldModelSetI32<'a> {
             self.buffer[self.offset + 2],
             self.buffer[self.offset + 3],
         ]) as usize;
-        
+
         if pointer == 0 || self.buffer.len() < pointer + 4 {
             return 0;
         }
-        
+
         let count = u32::from_le_bytes([
             self.buffer[pointer],
             self.buffer[pointer + 1],
             self.buffer[pointer + 2],
             self.buffer[pointer + 3],
         ]) as usize;
-        
+
         4 + (count * 4) // size + elements
     }
 }
@@ -267,7 +319,7 @@ impl<'a> FieldModelSetI32Mut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, values: &HashSet<i32>) {
         let vec: Vec<i32> = values.iter().copied().collect();
         self.buffer.write_set_i32(self.offset, &vec);
@@ -275,9 +327,15 @@ impl<'a> FieldModelSetI32Mut<'a> {
 }
 
 impl<'a> FieldModel for FieldModelSetI32Mut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 // ============================================================================
@@ -293,17 +351,23 @@ impl<'a> FieldModelVectorString<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> Vec<String> {
         ReadBuffer::from(self.buffer.to_vec()).read_vector_string(self.offset)
     }
 }
 
 impl<'a> FieldModel for FieldModelVectorString<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -314,18 +378,18 @@ impl<'a> FieldModel for FieldModelVectorString<'a> {
             self.buffer[self.offset + 2],
             self.buffer[self.offset + 3],
         ]) as usize;
-        
+
         if pointer == 0 || self.buffer.len() < pointer + 4 {
             return 0;
         }
-        
+
         let size = u32::from_le_bytes([
             self.buffer[pointer],
             self.buffer[pointer + 1],
             self.buffer[pointer + 2],
             self.buffer[pointer + 3],
         ]) as usize;
-        
+
         let mut total = 4;
         let mut current_offset = pointer + 4;
         for _ in 0..size {
@@ -354,16 +418,22 @@ impl<'a> FieldModelVectorStringMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, values: &[String]) {
         self.buffer.write_vector_string(self.offset, values);
     }
 }
 
 impl<'a> FieldModel for FieldModelVectorStringMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 pub struct FieldModelArrayString<'a> {
@@ -374,17 +444,25 @@ pub struct FieldModelArrayString<'a> {
 
 impl<'a> FieldModelArrayString<'a> {
     pub fn new(buffer: &'a [u8], offset: usize, count: usize) -> Self {
-        Self { buffer, offset, count }
+        Self {
+            buffer,
+            offset,
+            count,
+        }
     }
-    
+
     pub fn get(&self) -> Vec<String> {
         ReadBuffer::from(self.buffer.to_vec()).read_array_string(self.offset, self.count)
     }
 }
 
 impl<'a> FieldModel for FieldModelArrayString<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
     fn size(&self) -> usize {
         // Variable size, calculate from buffer
         let mut total = 0;
@@ -414,20 +492,33 @@ pub struct FieldModelArrayStringMut<'a> {
 
 impl<'a> FieldModelArrayStringMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize, count: usize) -> Self {
-        Self { buffer, offset, count }
+        Self {
+            buffer,
+            offset,
+            count,
+        }
     }
-    
+
     pub fn set(&mut self, values: &[String]) {
         if values.len() != self.count {
-            panic!("Array size mismatch: expected {}, got {}", self.count, values.len());
+            panic!(
+                "Array size mismatch: expected {}, got {}",
+                self.count,
+                values.len()
+            );
         }
         self.buffer.write_array_string(self.offset, values);
     }
 }
 
 impl<'a> FieldModel for FieldModelArrayStringMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 0 } // Variable
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        0
+    } // Variable
 }
-

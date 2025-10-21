@@ -1,9 +1,8 @@
 /*!
  * FBE Default Values Support for Rust
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use crate::buffer::{WriteBuffer, ReadBuffer};
+use crate::buffer::{ReadBuffer, WriteBuffer};
 
 // Numeric defaults
 #[derive(Debug, Clone, PartialEq)]
@@ -17,10 +16,10 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            timeout: 30,        // Schema default
-            retries: 3,         // Schema default
-            threshold: 0.95,    // Schema default
-            ratio: 1.5,         // Schema default
+            timeout: 30,     // Schema default
+            retries: 3,      // Schema default
+            threshold: 0.95, // Schema default
+            ratio: 1.5,      // Schema default
         }
     }
 }
@@ -53,7 +52,12 @@ impl Config {
         let threshold = buffer.read_f64(offset);
         offset += 8;
         let ratio = buffer.read_f32(offset);
-        Self { timeout, retries, threshold, ratio }
+        Self {
+            timeout,
+            retries,
+            threshold,
+            ratio,
+        }
     }
 }
 
@@ -69,10 +73,10 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            enabled: true,                      // Schema default
-            debug: false,                       // Schema default
-            name: "DefaultName".to_string(),    // Schema default
-            path: "/var/log".to_string(),       // Schema default
+            enabled: true,                   // Schema default
+            debug: false,                    // Schema default
+            name: "DefaultName".to_string(), // Schema default
+            path: "/var/log".to_string(),    // Schema default
         }
     }
 }
@@ -105,7 +109,12 @@ impl Settings {
         let name = buffer.read_string(offset);
         offset += 4 + name.len();
         let path = buffer.read_string(offset);
-        Self { enabled, debug, name, path }
+        Self {
+            enabled,
+            debug,
+            name,
+            path,
+        }
     }
 }
 
@@ -123,12 +132,12 @@ pub struct Order {
 impl Default for Order {
     fn default() -> Self {
         Self {
-            id: 0,                      // Type default (no schema default)
-            symbol: String::new(),      // Type default (no schema default)
-            price: 0.0,                 // Schema default
-            volume: 0.0,                // Schema default
-            tp: 10.0,                   // Schema default
-            sl: -10.0,                  // Schema default (negative)
+            id: 0,                 // Type default (no schema default)
+            symbol: String::new(), // Type default (no schema default)
+            price: 0.0,            // Schema default
+            volume: 0.0,           // Schema default
+            tp: 10.0,              // Schema default
+            sl: -10.0,             // Schema default (negative)
         }
     }
 }
@@ -169,7 +178,14 @@ impl Order {
         let tp = buffer.read_f64(offset);
         offset += 8;
         let sl = buffer.read_f64(offset);
-        Self { id, symbol, price, volume, tp, sl }
+        Self {
+            id,
+            symbol,
+            price,
+            volume,
+            tp,
+            sl,
+        }
     }
 }
 
@@ -185,10 +201,10 @@ pub struct OptionalFields {
 impl Default for OptionalFields {
     fn default() -> Self {
         Self {
-            count: None,                            // Schema default (null)
-            text: Some("Default".to_string()),      // Schema default
-            flag: Some(true),                       // Schema default
-            value: None,                            // Type default (no schema default)
+            count: None,                       // Schema default (null)
+            text: Some("Default".to_string()), // Schema default
+            flag: Some(true),                  // Schema default
+            value: None,                       // Type default (no schema default)
         }
     }
 }
@@ -269,4 +285,3 @@ mod tests {
         assert_eq!(order.sl, -20.0);
     }
 }
-

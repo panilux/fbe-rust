@@ -1,15 +1,14 @@
 /*!
  * Cross-platform default values test: Rust ↔ PHP
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use fbe::buffer::{WriteBuffer, ReadBuffer};
-use fbe::defaults::{Config, Settings, Order};
+use fbe::buffer::{ReadBuffer, WriteBuffer};
+use fbe::defaults::{Config, Order, Settings};
 use std::fs;
 
 #[test]
 fn test_config_rust_write_php_read() {
-    let config = Config::new();  // Uses defaults
+    let config = Config::new(); // Uses defaults
 
     let mut buffer = WriteBuffer::new();
     buffer.reserve(100);
@@ -18,13 +17,15 @@ fn test_config_rust_write_php_read() {
     fs::write("/tmp/rust_config.bin", buffer.data()).expect("Failed to write");
 
     println!("✓ Rust wrote Config with defaults");
-    println!("  timeout={}, retries={}, threshold={}, ratio={}",
-        config.timeout, config.retries, config.threshold, config.ratio);
+    println!(
+        "  timeout={}, retries={}, threshold={}, ratio={}",
+        config.timeout, config.retries, config.threshold, config.ratio
+    );
 }
 
 #[test]
 fn test_settings_rust_write_php_read() {
-    let settings = Settings::new();  // Uses defaults
+    let settings = Settings::new(); // Uses defaults
 
     let mut buffer = WriteBuffer::new();
     buffer.reserve(100);
@@ -33,13 +34,15 @@ fn test_settings_rust_write_php_read() {
     fs::write("/tmp/rust_settings.bin", buffer.data()).expect("Failed to write");
 
     println!("✓ Rust wrote Settings with defaults");
-    println!("  enabled={}, debug={}, name={}, path={}",
-        settings.enabled, settings.debug, settings.name, settings.path);
+    println!(
+        "  enabled={}, debug={}, name={}, path={}",
+        settings.enabled, settings.debug, settings.name, settings.path
+    );
 }
 
 #[test]
 fn test_order_rust_write_php_read() {
-    let order = Order::new();  // Uses defaults
+    let order = Order::new(); // Uses defaults
 
     let mut buffer = WriteBuffer::new();
     buffer.reserve(100);
@@ -63,8 +66,10 @@ fn test_config_php_write_rust_read() {
         assert!((config.threshold - 0.95).abs() < 0.001);
 
         println!("✓ Rust read Config from PHP");
-        println!("  timeout={}, retries={}, threshold={}",
-            config.timeout, config.retries, config.threshold);
+        println!(
+            "  timeout={}, retries={}, threshold={}",
+            config.timeout, config.retries, config.threshold
+        );
     }
 }
 
@@ -99,4 +104,3 @@ fn test_order_php_write_rust_read() {
         println!("  tp={}, sl={}", order.tp, order.sl);
     }
 }
-

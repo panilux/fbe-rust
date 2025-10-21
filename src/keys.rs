@@ -1,15 +1,14 @@
 /*!
  * FBE Struct Keys Support for Rust
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use crate::buffer::{WriteBuffer, ReadBuffer};
+use crate::buffer::{ReadBuffer, WriteBuffer};
 use std::hash::{Hash, Hasher};
 
 // Single key field: Order
 #[derive(Debug, Clone)]
 pub struct Order {
-    pub id: i32,        // [key]
+    pub id: i32, // [key]
     pub symbol: String,
     pub price: f64,
 }
@@ -63,7 +62,7 @@ impl Hash for Order {
 // String key field: Balance
 #[derive(Debug, Clone)]
 pub struct Balance {
-    pub currency: String,  // [key]
+    pub currency: String, // [key]
     pub amount: f64,
 }
 
@@ -120,7 +119,12 @@ pub struct UserSession {
 
 impl UserSession {
     pub fn new(user_id: i32, session_id: String, timestamp: i64, ip_address: String) -> Self {
-        Self { user_id, session_id, timestamp, ip_address }
+        Self {
+            user_id,
+            session_id,
+            timestamp,
+            ip_address,
+        }
     }
 
     pub fn key(&self) -> (i32, &str) {
@@ -150,7 +154,12 @@ impl UserSession {
         let timestamp = buffer.read_i64(offset);
         offset += 8;
         let ip_address = buffer.read_string(offset);
-        Self { user_id, session_id, timestamp, ip_address }
+        Self {
+            user_id,
+            session_id,
+            timestamp,
+            ip_address,
+        }
     }
 }
 
@@ -179,7 +188,11 @@ pub struct LogEntry {
 
 impl LogEntry {
     pub fn new(timestamp: i64, message: String, level: String) -> Self {
-        Self { timestamp, message, level }
+        Self {
+            timestamp,
+            message,
+            level,
+        }
     }
 
     pub fn serialize(&self, buffer: &mut WriteBuffer) -> usize {
@@ -201,7 +214,11 @@ impl LogEntry {
         let message = buffer.read_string(offset);
         offset += 4 + message.len();
         let level = buffer.read_string(offset);
-        Self { timestamp, message, level }
+        Self {
+            timestamp,
+            message,
+            level,
+        }
     }
 }
 
@@ -240,14 +257,34 @@ mod tests {
 
     #[test]
     fn test_user_session_composite_key() {
-        let session1 = UserSession::new(100, "abc123".to_string(), 1234567890, "192.168.1.1".to_string());
-        let session2 = UserSession::new(100, "abc123".to_string(), 9876543210, "10.0.0.1".to_string());
-        let session3 = UserSession::new(100, "xyz789".to_string(), 1234567890, "192.168.1.1".to_string());
-        let session4 = UserSession::new(200, "abc123".to_string(), 1234567890, "192.168.1.1".to_string());
+        let session1 = UserSession::new(
+            100,
+            "abc123".to_string(),
+            1234567890,
+            "192.168.1.1".to_string(),
+        );
+        let session2 = UserSession::new(
+            100,
+            "abc123".to_string(),
+            9876543210,
+            "10.0.0.1".to_string(),
+        );
+        let session3 = UserSession::new(
+            100,
+            "xyz789".to_string(),
+            1234567890,
+            "192.168.1.1".to_string(),
+        );
+        let session4 = UserSession::new(
+            200,
+            "abc123".to_string(),
+            1234567890,
+            "192.168.1.1".to_string(),
+        );
 
-        assert_eq!(session1, session2);  // Same userId + sessionId
-        assert_ne!(session1, session3);  // Different sessionId
-        assert_ne!(session1, session4);  // Different userId
+        assert_eq!(session1, session2); // Same userId + sessionId
+        assert_ne!(session1, session3); // Different sessionId
+        assert_ne!(session1, session4); // Different userId
 
         assert_eq!(session1.key(), (100, "abc123"));
     }
@@ -285,17 +322,16 @@ mod tests {
         let mut balance_set: HashSet<Balance> = HashSet::new();
 
         let b1 = Balance::new("USD".to_string(), 1000.00);
-        let b2 = Balance::new("USD".to_string(), 2000.00);  // Same key, different amount
+        let b2 = Balance::new("USD".to_string(), 2000.00); // Same key, different amount
         let b3 = Balance::new("EUR".to_string(), 1000.00);
 
         balance_set.insert(b1.clone());
-        balance_set.insert(b2.clone());  // Should replace b1 (same key)
+        balance_set.insert(b2.clone()); // Should replace b1 (same key)
         balance_set.insert(b3.clone());
 
         // Only 2 items (USD and EUR)
         assert_eq!(balance_set.len(), 2);
-        assert!(balance_set.contains(&b1));  // Contains USD
-        assert!(balance_set.contains(&b3));  // Contains EUR
+        assert!(balance_set.contains(&b1)); // Contains USD
+        assert!(balance_set.contains(&b3)); // Contains EUR
     }
 }
-

@@ -1,9 +1,8 @@
 /*!
  * FBE Struct Inheritance Support for Rust
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use crate::buffer::{WriteBuffer, ReadBuffer};
+use crate::buffer::{ReadBuffer, WriteBuffer};
 
 // Base struct: Person
 #[derive(Debug, Clone, PartialEq)]
@@ -32,7 +31,7 @@ impl Person {
         offset += 4 + self.name.len();
         buffer.write_i32(offset, self.age);
         offset += 4;
-        buffer.set_size(offset);  // Update buffer size
+        buffer.set_size(offset); // Update buffer size
         offset
     }
 
@@ -69,7 +68,12 @@ impl Default for Employee {
 
 impl Employee {
     pub fn new(name: String, age: i32, company: String, salary: f64) -> Self {
-        Self { name, age, company, salary }
+        Self {
+            name,
+            age,
+            company,
+            salary,
+        }
     }
 
     pub fn serialize(&self, buffer: &mut WriteBuffer) -> usize {
@@ -84,7 +88,7 @@ impl Employee {
         offset += 4 + self.company.len();
         buffer.write_f64(offset, self.salary);
         offset += 8;
-        buffer.set_size(offset);  // Update buffer size
+        buffer.set_size(offset); // Update buffer size
         offset
     }
 
@@ -99,7 +103,12 @@ impl Employee {
         let company = buffer.read_string(offset);
         offset += 4 + company.len();
         let salary = buffer.read_f64(offset);
-        Self { name, age, company, salary }
+        Self {
+            name,
+            age,
+            company,
+            salary,
+        }
     }
 }
 
@@ -130,7 +139,13 @@ impl Default for Manager {
 
 impl Manager {
     pub fn new(name: String, age: i32, company: String, salary: f64, team_size: i32) -> Self {
-        Self { name, age, company, salary, team_size }
+        Self {
+            name,
+            age,
+            company,
+            salary,
+            team_size,
+        }
     }
 
     pub fn serialize(&self, buffer: &mut WriteBuffer) -> usize {
@@ -146,7 +161,7 @@ impl Manager {
         offset += 8;
         buffer.write_i32(offset, self.team_size);
         offset += 4;
-        buffer.set_size(offset);  // Update buffer size
+        buffer.set_size(offset); // Update buffer size
         offset
     }
 
@@ -162,7 +177,13 @@ impl Manager {
         let salary = buffer.read_f64(offset);
         offset += 8;
         let team_size = buffer.read_i32(offset);
-        Self { name, age, company, salary, team_size }
+        Self {
+            name,
+            age,
+            company,
+            salary,
+            team_size,
+        }
     }
 }
 
@@ -174,7 +195,7 @@ mod tests {
     fn test_person_serialization() {
         let person = Person::new("Alice".to_string(), 30);
         let mut buffer = WriteBuffer::new();
-        buffer.reserve(100);  // Reserve space
+        buffer.reserve(100); // Reserve space
         let size = person.serialize(&mut buffer);
         assert_eq!(size, 13); // 4 (len) + 5 (Alice) + 4 (age)
 
@@ -188,7 +209,7 @@ mod tests {
     fn test_employee_serialization() {
         let employee = Employee::new("Bob".to_string(), 35, "Panilux".to_string(), 75000.50);
         let mut buffer = WriteBuffer::new();
-        buffer.reserve(100);  // Reserve space
+        buffer.reserve(100); // Reserve space
         let size = employee.serialize(&mut buffer);
         assert_eq!(size, 30); // 4+3 + 4 + 4+7 + 8
 
@@ -200,9 +221,15 @@ mod tests {
 
     #[test]
     fn test_manager_serialization() {
-        let manager = Manager::new("Charlie".to_string(), 40, "Panilux".to_string(), 95000.75, 10);
+        let manager = Manager::new(
+            "Charlie".to_string(),
+            40,
+            "Panilux".to_string(),
+            95000.75,
+            10,
+        );
         let mut buffer = WriteBuffer::new();
-        buffer.reserve(100);  // Reserve space
+        buffer.reserve(100); // Reserve space
         let size = manager.serialize(&mut buffer);
         assert_eq!(size, 38); // 4+7 + 4 + 4+7 + 8 + 4
 
@@ -212,4 +239,3 @@ mod tests {
         assert_eq!(manager, manager2);
     }
 }
-

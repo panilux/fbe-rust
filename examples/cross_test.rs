@@ -1,4 +1,4 @@
-use fbe::buffer::{WriteBuffer, ReadBuffer};
+use fbe::buffer::{ReadBuffer, WriteBuffer};
 
 mod test {
     include!("../test/mod.rs");
@@ -14,12 +14,15 @@ fn main() {
         side: test::side::Side::Buy,
     };
 
-    println!("Original: id={}, name={}, side={:?}", user.id, user.name, user.side);
+    println!(
+        "Original: id={}, name={}, side={:?}",
+        user.id, user.name, user.side
+    );
 
     // Serialize
     let mut buffer = WriteBuffer::new();
     let size = user.serialize(&mut buffer);
-    
+
     println!("Serialized {} bytes", size);
     println!("Binary: {:?}", buffer.data());
 
@@ -32,11 +35,14 @@ fn main() {
     read_buffer.attach_buffer(buffer.data(), 0, buffer.size());
     let decoded = test::user::User::deserialize(&read_buffer);
 
-    println!("\nDecoded: id={}, name={}, side={:?}", decoded.id, decoded.name, decoded.side);
-    
+    println!(
+        "\nDecoded: id={}, name={}, side={:?}",
+        decoded.id, decoded.name, decoded.side
+    );
+
     assert_eq!(user.id, decoded.id);
     assert_eq!(user.name, decoded.name);
-    
+
     println!("\n✓ Rust round-trip test passed!");
 
     // Try reading PHP binary if exists
@@ -46,9 +52,11 @@ fn main() {
         let mut php_buffer = ReadBuffer::new();
         php_buffer.attach_buffer(&php_binary, 0, php_binary.len());
         let php_user = test::user::User::deserialize(&php_buffer);
-        
-        println!("PHP→Rust: id={}, name={}, side={:?}", php_user.id, php_user.name, php_user.side);
+
+        println!(
+            "PHP→Rust: id={}, name={}, side={:?}",
+            php_user.id, php_user.name, php_user.side
+        );
         println!("✓ Successfully read PHP binary!");
     }
 }
-

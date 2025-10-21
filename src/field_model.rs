@@ -2,8 +2,6 @@
 //!
 //! Field model pattern for type-safe serialization/deserialization.
 //! Following original FBE design with Rust zero-cost abstractions.
-//!
-//! HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 
 use crate::buffer::{ReadBuffer, WriteBuffer};
 
@@ -11,30 +9,30 @@ use crate::buffer::{ReadBuffer, WriteBuffer};
 pub trait FieldModel {
     /// Get field offset in buffer
     fn offset(&self) -> usize;
-    
+
     /// Set field offset in buffer
     fn set_offset(&mut self, offset: usize);
-    
+
     /// Get field size in bytes
     fn size(&self) -> usize;
-    
+
     /// Get extra size for dynamic types (strings, vectors, etc.)
     fn extra(&self) -> usize {
         0
     }
-    
+
     /// Shift offset forward
     fn shift(&mut self, size: usize) {
         let current = self.offset();
         self.set_offset(current + size);
     }
-    
+
     /// Shift offset backward
     fn unshift(&mut self, size: usize) {
         let current = self.offset();
         self.set_offset(current - size);
     }
-    
+
     /// Verify field value
     fn verify(&self) -> bool {
         true
@@ -56,16 +54,22 @@ macro_rules! impl_primitive_field_model {
             pub fn new(buffer: &'a [u8], offset: usize) -> Self {
                 Self { buffer, offset }
             }
-            
+
             pub fn get(&self) -> $type {
                 ReadBuffer::from(self.buffer.to_vec()).$read_fn(self.offset)
             }
         }
 
         impl<'a> FieldModel for $name<'a> {
-            fn offset(&self) -> usize { self.offset }
-            fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-            fn size(&self) -> usize { $size }
+            fn offset(&self) -> usize {
+                self.offset
+            }
+            fn set_offset(&mut self, offset: usize) {
+                self.offset = offset;
+            }
+            fn size(&self) -> usize {
+                $size
+            }
         }
 
         pub struct $name_mut<'a> {
@@ -77,16 +81,22 @@ macro_rules! impl_primitive_field_model {
             pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
                 Self { buffer, offset }
             }
-            
+
             pub fn set(&mut self, value: $type) {
                 self.buffer.$write_fn(self.offset, value);
             }
         }
 
         impl<'a> FieldModel for $name_mut<'a> {
-            fn offset(&self) -> usize { self.offset }
-            fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-            fn size(&self) -> usize { $size }
+            fn offset(&self) -> usize {
+                self.offset
+            }
+            fn set_offset(&mut self, offset: usize) {
+                self.offset = offset;
+            }
+            fn size(&self) -> usize {
+                $size
+            }
         }
     };
 }
@@ -95,7 +105,14 @@ macro_rules! impl_primitive_field_model {
 // Primitive Types
 // ============================================================================
 
-impl_primitive_field_model!(FieldModelBool, FieldModelBoolMut, bool, 1, read_bool, write_bool);
+impl_primitive_field_model!(
+    FieldModelBool,
+    FieldModelBoolMut,
+    bool,
+    1,
+    read_bool,
+    write_bool
+);
 impl_primitive_field_model!(FieldModelI8, FieldModelI8Mut, i8, 1, read_i8, write_i8);
 impl_primitive_field_model!(FieldModelI16, FieldModelI16Mut, i16, 2, read_i16, write_i16);
 impl_primitive_field_model!(FieldModelI32, FieldModelI32Mut, i32, 4, read_i32, write_i32);
@@ -120,17 +137,23 @@ impl<'a> FieldModelString<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> String {
         ReadBuffer::from(self.buffer.to_vec()).read_string(self.offset)
     }
 }
 
 impl<'a> FieldModel for FieldModelString<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 } // Size prefix only
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    } // Size prefix only
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -149,23 +172,36 @@ impl<'a> FieldModelStringMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, value: &str) {
         self.buffer.write_string(self.offset, value);
     }
 }
 
 impl<'a> FieldModel for FieldModelStringMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 // ============================================================================
 // Timestamp
 // ============================================================================
 
-impl_primitive_field_model!(FieldModelTimestamp, FieldModelTimestampMut, u64, 8, read_timestamp, write_timestamp);
+impl_primitive_field_model!(
+    FieldModelTimestamp,
+    FieldModelTimestampMut,
+    u64,
+    8,
+    read_timestamp,
+    write_timestamp
+);
 
 // ============================================================================
 // UUID
@@ -180,7 +216,7 @@ impl<'a> FieldModelUuid<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> String {
         let bytes = ReadBuffer::from(self.buffer.to_vec()).read_uuid(self.offset);
         // Convert binary to UUID string
@@ -194,9 +230,15 @@ impl<'a> FieldModelUuid<'a> {
 }
 
 impl<'a> FieldModel for FieldModelUuid<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 16 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        16
+    }
 }
 
 pub struct FieldModelUuidMut<'a> {
@@ -208,22 +250,28 @@ impl<'a> FieldModelUuidMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, value: &str) {
         // Parse UUID string to binary
         let uuid_str = value.replace("-", "");
         let mut bytes = [0u8; 16];
         for i in 0..16 {
-            bytes[i] = u8::from_str_radix(&uuid_str[i*2..i*2+2], 16).unwrap_or(0);
+            bytes[i] = u8::from_str_radix(&uuid_str[i * 2..i * 2 + 2], 16).unwrap_or(0);
         }
         self.buffer.write_uuid(self.offset, &bytes);
     }
 }
 
 impl<'a> FieldModel for FieldModelUuidMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 16 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        16
+    }
 }
 
 // ============================================================================
@@ -239,17 +287,23 @@ impl<'a> FieldModelBytes<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> Vec<u8> {
         ReadBuffer::from(self.buffer.to_vec()).read_bytes(self.offset)
     }
 }
 
 impl<'a> FieldModel for FieldModelBytes<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 } // Size prefix only
-    
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    } // Size prefix only
+
     fn extra(&self) -> usize {
         if self.buffer.len() < self.offset + 4 {
             return 0;
@@ -268,16 +322,22 @@ impl<'a> FieldModelBytesMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, value: &[u8]) {
         self.buffer.write_bytes(self.offset, value);
     }
 }
 
 impl<'a> FieldModel for FieldModelBytesMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 4 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        4
+    }
 }
 
 // ============================================================================
@@ -293,16 +353,22 @@ impl<'a> FieldModelDecimal<'a> {
     pub fn new(buffer: &'a [u8], offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn get(&self) -> (i128, u8, bool) {
         ReadBuffer::from(self.buffer.to_vec()).read_decimal(self.offset)
     }
 }
 
 impl<'a> FieldModel for FieldModelDecimal<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 16 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        16
+    }
 }
 
 pub struct FieldModelDecimalMut<'a> {
@@ -314,15 +380,21 @@ impl<'a> FieldModelDecimalMut<'a> {
     pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
         Self { buffer, offset }
     }
-    
+
     pub fn set(&mut self, value: i128, scale: u8, negative: bool) {
-        self.buffer.write_decimal(self.offset, value, scale, negative);
+        self.buffer
+            .write_decimal(self.offset, value, scale, negative);
     }
 }
 
 impl<'a> FieldModel for FieldModelDecimalMut<'a> {
-    fn offset(&self) -> usize { self.offset }
-    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
-    fn size(&self) -> usize { 16 }
+    fn offset(&self) -> usize {
+        self.offset
+    }
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+    fn size(&self) -> usize {
+        16
+    }
 }
-

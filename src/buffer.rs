@@ -1,9 +1,9 @@
 //! Fast Binary Encoding buffer implementation
-//! 
+//!
 //! Based on original FBE Python implementation with exact API compatibility
 
 /// Write buffer for FBE serialization
-/// 
+///
 /// Manages dynamic byte buffer with offset tracking and allocation
 #[derive(Debug, Clone)]
 pub struct WriteBuffer {
@@ -115,10 +115,7 @@ impl WriteBuffer {
 
     /// Remove memory of given size from buffer
     pub fn remove(&mut self, offset: usize, size: usize) {
-        assert!(
-            offset + size <= self.buffer.len(),
-            "Invalid offset & size!"
-        );
+        assert!(offset + size <= self.buffer.len(), "Invalid offset & size!");
 
         self.buffer.drain(offset..offset + size);
         self.size -= size;
@@ -235,7 +232,8 @@ impl WriteBuffer {
         let len = value.len() as i32;
         self.write_i32(offset, len);
         let bytes = value.as_bytes();
-        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + bytes.len()].copy_from_slice(bytes);
+        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + bytes.len()]
+            .copy_from_slice(bytes);
     }
 
     /// Write timestamp as uint64 (nanoseconds since epoch)
@@ -255,7 +253,8 @@ impl WriteBuffer {
     pub fn write_bytes(&mut self, offset: usize, value: &[u8]) {
         let len = value.len() as i32;
         self.write_i32(offset, len);
-        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + value.len()].copy_from_slice(value);
+        self.buffer[self.offset + offset + 4..self.offset + offset + 4 + value.len()]
+            .copy_from_slice(value);
     }
 
     /// Write decimal as 16 bytes (.NET Decimal format)
@@ -280,18 +279,18 @@ impl WriteBuffer {
         let size = values.len();
         let data_size = 4 + (size * 4); // 4 bytes size + elements
         let data_offset = self.allocate(data_size);
-        
+
         // Write pointer at offset
         self.write_u32(offset, (data_offset - self.offset) as u32);
-        
+
         // Write size at data_offset
         self.write_u32(data_offset - self.offset, size as u32);
-        
+
         // Write elements
         for (i, &value) in values.iter().enumerate() {
             self.write_i32(data_offset - self.offset + 4 + (i * 4), value);
         }
-        
+
         data_size
     }
 
@@ -310,19 +309,19 @@ impl WriteBuffer {
         let size = entries.len();
         let data_size = 4 + (size * 8); // 4 bytes size + (key+value) pairs
         let data_offset = self.allocate(data_size);
-        
+
         // Write pointer at offset
         self.write_u32(offset, (data_offset - self.offset) as u32);
-        
+
         // Write size at data_offset
         self.write_u32(data_offset - self.offset, size as u32);
-        
+
         // Write key-value pairs
         for (i, &(key, value)) in entries.iter().enumerate() {
             self.write_i32(data_offset - self.offset + 4 + (i * 8), key);
             self.write_i32(data_offset - self.offset + 4 + (i * 8) + 4, value);
         }
-        
+
         data_size
     }
 
@@ -344,17 +343,17 @@ impl WriteBuffer {
         for s in values {
             data_size += 4 + s.len();
         }
-        
+
         let data_offset = self.allocate(data_size);
         self.write_u32(offset, (data_offset - self.offset) as u32);
         self.write_u32(data_offset - self.offset, size as u32);
-        
+
         let mut current_offset = data_offset - self.offset + 4;
         for s in values {
             self.write_string(current_offset, s);
             current_offset += 4 + s.len();
         }
-        
+
         data_size
     }
 
@@ -416,7 +415,7 @@ impl WriteBuffer {
             None => self.write_u8(offset, 0),
             Some(v) => {
                 self.write_u8(offset, 1);
-                let data_offset = self.allocate(4);  // Allocate for i32
+                let data_offset = self.allocate(4); // Allocate for i32
                 self.write_u32(offset + 1, data_offset as u32);
                 self.write_i32(data_offset, v);
             }
@@ -429,7 +428,7 @@ impl WriteBuffer {
             Some(v) => {
                 self.write_u8(offset, 1);
                 let len = v.len();
-                let data_offset = self.allocate(4 + len);  // Allocate for length + string
+                let data_offset = self.allocate(4 + len); // Allocate for length + string
                 self.write_u32(offset + 1, data_offset as u32);
                 self.write_string(data_offset, v);
             }
@@ -441,7 +440,7 @@ impl WriteBuffer {
             None => self.write_u8(offset, 0),
             Some(v) => {
                 self.write_u8(offset, 1);
-                let data_offset = self.allocate(8);  // Allocate for f64
+                let data_offset = self.allocate(8); // Allocate for f64
                 self.write_u32(offset + 1, data_offset as u32);
                 self.write_f64(data_offset, v);
             }
@@ -650,15 +649,16 @@ impl ReadBuffer {
     pub fn read_decimal(&self, offset: usize) -> (i128, u8, bool) {
         // Read 96-bit unscaled value from bytes 0-11
         let mut value_bytes = [0u8; 16];
-        value_bytes[..12].copy_from_slice(&self.buffer[self.offset + offset..self.offset + offset + 12]);
+        value_bytes[..12]
+            .copy_from_slice(&self.buffer[self.offset + offset..self.offset + offset + 12]);
         let value = i128::from_le_bytes(value_bytes);
-        
+
         // Read scale from byte 14
         let scale = self.buffer[self.offset + offset + 14];
-        
+
         // Read sign from byte 15
         let negative = (self.buffer[self.offset + offset + 15] & 0x80) != 0;
-        
+
         (value, scale, negative)
     }
 
@@ -671,16 +671,16 @@ impl ReadBuffer {
         if data_offset == 0 {
             return Vec::new();
         }
-        
+
         // Read size
         let size = self.read_u32(data_offset) as usize;
-        
+
         // Read elements
         let mut result = Vec::with_capacity(size);
         for i in 0..size {
             result.push(self.read_i32(data_offset + 4 + (i * 4)));
         }
-        
+
         result
     }
 
@@ -705,10 +705,10 @@ impl ReadBuffer {
         if data_offset == 0 {
             return Vec::new();
         }
-        
+
         // Read size
         let size = self.read_u32(data_offset) as usize;
-        
+
         // Read key-value pairs
         let mut result = Vec::with_capacity(size);
         for i in 0..size {
@@ -716,7 +716,7 @@ impl ReadBuffer {
             let value = self.read_i32(data_offset + 4 + (i * 8) + 4);
             result.push((key, value));
         }
-        
+
         result
     }
 
@@ -738,17 +738,17 @@ impl ReadBuffer {
         if pointer == 0 {
             return Vec::new();
         }
-        
+
         let size = self.read_u32(pointer) as usize;
         let mut values = Vec::with_capacity(size);
         let mut current_offset = pointer + 4;
-        
+
         for _ in 0..size {
             let s = self.read_string(current_offset);
             current_offset += 4 + s.len();
             values.push(s);
         }
-        
+
         values
     }
 
@@ -756,13 +756,13 @@ impl ReadBuffer {
     pub fn read_array_string(&self, offset: usize, count: usize) -> Vec<String> {
         let mut values = Vec::with_capacity(count);
         let mut current_offset = offset;
-        
+
         for _ in 0..count {
             let s = self.read_string(current_offset);
             current_offset += 4 + s.len();
             values.push(s);
         }
-        
+
         values
     }
 
@@ -772,7 +772,9 @@ impl ReadBuffer {
 
     pub fn read_vector_f32(&self, offset: usize) -> Vec<f32> {
         let pointer = self.read_u32(offset) as usize;
-        if pointer == 0 { return Vec::new(); }
+        if pointer == 0 {
+            return Vec::new();
+        }
         let size = self.read_u32(pointer) as usize;
         let mut values = Vec::with_capacity(size);
         for i in 0..size {
@@ -791,7 +793,9 @@ impl ReadBuffer {
 
     pub fn read_vector_f64(&self, offset: usize) -> Vec<f64> {
         let pointer = self.read_u32(offset) as usize;
-        if pointer == 0 { return Vec::new(); }
+        if pointer == 0 {
+            return Vec::new();
+        }
         let size = self.read_u32(pointer) as usize;
         let mut values = Vec::with_capacity(size);
         for i in 0..size {
@@ -862,7 +866,7 @@ mod tests {
     fn test_write_read_primitives() {
         let mut writer = WriteBuffer::with_capacity(100);
         writer.allocate(100);
-        
+
         writer.write_i32(0, 42);
         writer.write_f64(4, 3.14159);
         writer.write_bool(12, true);
@@ -875,4 +879,3 @@ mod tests {
         assert_eq!(reader.read_bool(12), true);
     }
 }
-

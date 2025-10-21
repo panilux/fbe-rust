@@ -150,8 +150,6 @@ All notable changes to this project will be documented in this file.
 - ReadBuffer with basic types
 - Basic test suite
 
-HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
-
 ## [0.1.1] - 2025-10-21
 
 ### Added

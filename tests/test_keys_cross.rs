@@ -1,10 +1,9 @@
 /*!
  * Cross-platform struct keys test: Rust ↔ PHP
- * HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
  */
 
-use fbe::buffer::{WriteBuffer, ReadBuffer};
-use fbe::keys::{Order, Balance, UserSession};
+use fbe::buffer::{ReadBuffer, WriteBuffer};
+use fbe::keys::{Balance, Order, UserSession};
 use std::fs;
 
 #[test]
@@ -41,7 +40,7 @@ fn test_user_session_rust_write_php_read() {
         100,
         "abc123".to_string(),
         1234567890,
-        "192.168.1.1".to_string()
+        "192.168.1.1".to_string(),
     );
 
     let mut buffer = WriteBuffer::new();
@@ -103,4 +102,3 @@ fn test_user_session_php_write_rust_read() {
         println!("  Key: {:?}", session.key());
     }
 }
-

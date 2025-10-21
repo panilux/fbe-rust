@@ -305,8 +305,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Based on [Fast Binary Encoding](https://github.com/chronoxor/FastBinaryEncoding) by Ivan Shynkarenka
 - Developed for [Panilux](https://panilux.com)
-
----
-
-**HERSEY DAHA IYI BIR PANILUX ICIN! 🚀**
-

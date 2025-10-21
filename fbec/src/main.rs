@@ -1,7 +1,6 @@
 //! Fast Binary Encoding compiler for Rust
 //! 
 //! Generates Rust code from .fbe schema files
-//! HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 
 use regex::Regex;
 use std::fs;
