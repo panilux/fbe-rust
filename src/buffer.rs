@@ -344,6 +344,17 @@ impl Default for ReadBuffer {
     }
 }
 
+impl From<Vec<u8>> for ReadBuffer {
+    fn from(data: Vec<u8>) -> Self {
+        let size = data.len();
+        Self {
+            buffer: data,
+            size,
+            offset: 0,
+        }
+    }
+}
+
 impl ReadBuffer {
     /// Create a new read buffer
     #[must_use]
