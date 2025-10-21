@@ -280,3 +280,154 @@ impl<'a> FieldModel for FieldModelSetI32Mut<'a> {
     fn size(&self) -> usize { 4 }
 }
 
+// ============================================================================
+// String Collections
+// ============================================================================
+
+pub struct FieldModelVectorString<'a> {
+    buffer: &'a [u8],
+    offset: usize,
+}
+
+impl<'a> FieldModelVectorString<'a> {
+    pub fn new(buffer: &'a [u8], offset: usize) -> Self {
+        Self { buffer, offset }
+    }
+    
+    pub fn get(&self) -> Vec<String> {
+        ReadBuffer::from(self.buffer.to_vec()).read_vector_string(self.offset)
+    }
+}
+
+impl<'a> FieldModel for FieldModelVectorString<'a> {
+    fn offset(&self) -> usize { self.offset }
+    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
+    fn size(&self) -> usize { 4 }
+    
+    fn extra(&self) -> usize {
+        if self.buffer.len() < self.offset + 4 {
+            return 0;
+        }
+        let pointer = u32::from_le_bytes([
+            self.buffer[self.offset],
+            self.buffer[self.offset + 1],
+            self.buffer[self.offset + 2],
+            self.buffer[self.offset + 3],
+        ]) as usize;
+        
+        if pointer == 0 || self.buffer.len() < pointer + 4 {
+            return 0;
+        }
+        
+        let size = u32::from_le_bytes([
+            self.buffer[pointer],
+            self.buffer[pointer + 1],
+            self.buffer[pointer + 2],
+            self.buffer[pointer + 3],
+        ]) as usize;
+        
+        let mut total = 4;
+        let mut current_offset = pointer + 4;
+        for _ in 0..size {
+            if self.buffer.len() < current_offset + 4 {
+                break;
+            }
+            let len = u32::from_le_bytes([
+                self.buffer[current_offset],
+                self.buffer[current_offset + 1],
+                self.buffer[current_offset + 2],
+                self.buffer[current_offset + 3],
+            ]) as usize;
+            total += 4 + len;
+            current_offset += 4 + len;
+        }
+        total
+    }
+}
+
+pub struct FieldModelVectorStringMut<'a> {
+    buffer: &'a mut WriteBuffer,
+    offset: usize,
+}
+
+impl<'a> FieldModelVectorStringMut<'a> {
+    pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {
+        Self { buffer, offset }
+    }
+    
+    pub fn set(&mut self, values: &[String]) {
+        self.buffer.write_vector_string(self.offset, values);
+    }
+}
+
+impl<'a> FieldModel for FieldModelVectorStringMut<'a> {
+    fn offset(&self) -> usize { self.offset }
+    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
+    fn size(&self) -> usize { 4 }
+}
+
+pub struct FieldModelArrayString<'a> {
+    buffer: &'a [u8],
+    offset: usize,
+    count: usize,
+}
+
+impl<'a> FieldModelArrayString<'a> {
+    pub fn new(buffer: &'a [u8], offset: usize, count: usize) -> Self {
+        Self { buffer, offset, count }
+    }
+    
+    pub fn get(&self) -> Vec<String> {
+        ReadBuffer::from(self.buffer.to_vec()).read_array_string(self.offset, self.count)
+    }
+}
+
+impl<'a> FieldModel for FieldModelArrayString<'a> {
+    fn offset(&self) -> usize { self.offset }
+    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
+    fn size(&self) -> usize {
+        // Variable size, calculate from buffer
+        let mut total = 0;
+        let mut current_offset = self.offset;
+        for _ in 0..self.count {
+            if self.buffer.len() < current_offset + 4 {
+                break;
+            }
+            let len = u32::from_le_bytes([
+                self.buffer[current_offset],
+                self.buffer[current_offset + 1],
+                self.buffer[current_offset + 2],
+                self.buffer[current_offset + 3],
+            ]) as usize;
+            total += 4 + len;
+            current_offset += 4 + len;
+        }
+        total
+    }
+}
+
+pub struct FieldModelArrayStringMut<'a> {
+    buffer: &'a mut WriteBuffer,
+    offset: usize,
+    count: usize,
+}
+
+impl<'a> FieldModelArrayStringMut<'a> {
+    pub fn new(buffer: &'a mut WriteBuffer, offset: usize, count: usize) -> Self {
+        Self { buffer, offset, count }
+    }
+    
+    pub fn set(&mut self, values: &[String]) {
+        if values.len() != self.count {
+            panic!("Array size mismatch: expected {}, got {}", self.count, values.len());
+        }
+        self.buffer.write_array_string(self.offset, values);
+    }
+}
+
+impl<'a> FieldModel for FieldModelArrayStringMut<'a> {
+    fn offset(&self) -> usize { self.offset }
+    fn set_offset(&mut self, offset: usize) { self.offset = offset; }
+    fn size(&self) -> usize { 0 } // Variable
+}
+

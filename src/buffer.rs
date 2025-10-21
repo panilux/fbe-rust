@@ -328,6 +328,40 @@ impl WriteBuffer {
     pub fn write_set_i32(&mut self, offset: usize, values: &[i32]) -> usize {
         self.write_vector_i32(offset, values)
     }
+    // ========================================================================
+    // String Collections
+    // ========================================================================
+
+    /// Write vector of strings
+    pub fn write_vector_string(&mut self, offset: usize, values: &[String]) -> usize {
+        let size = values.len();
+        let mut data_size = 4; // size prefix
+        for s in values {
+            data_size += 4 + s.len();
+        }
+        
+        let data_offset = self.allocate(data_size);
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        self.write_u32(data_offset - self.offset, size as u32);
+        
+        let mut current_offset = data_offset - self.offset + 4;
+        for s in values {
+            self.write_string(current_offset, s);
+            current_offset += 4 + s.len();
+        }
+        
+        data_size
+    }
+
+    /// Write fixed-size array of strings
+    pub fn write_array_string(&mut self, offset: usize, values: &[String]) -> usize {
+        let mut current_offset = offset;
+        for s in values {
+            self.write_string(current_offset, s);
+            current_offset += 4 + s.len();
+        }
+        current_offset - offset
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -607,6 +641,44 @@ impl ReadBuffer {
     #[inline]
     pub fn read_set_i32(&self, offset: usize) -> Vec<i32> {
         self.read_vector_i32(offset)
+    }
+
+    // ========================================================================
+    // String Collections
+    // ========================================================================
+
+    /// Read vector of strings
+    pub fn read_vector_string(&self, offset: usize) -> Vec<String> {
+        let pointer = self.read_u32(offset) as usize;
+        if pointer == 0 {
+            return Vec::new();
+        }
+        
+        let size = self.read_u32(pointer) as usize;
+        let mut values = Vec::with_capacity(size);
+        let mut current_offset = pointer + 4;
+        
+        for _ in 0..size {
+            let s = self.read_string(current_offset);
+            current_offset += 4 + s.len();
+            values.push(s);
+        }
+        
+        values
+    }
+
+    /// Read fixed-size array of strings
+    pub fn read_array_string(&self, offset: usize, count: usize) -> Vec<String> {
+        let mut values = Vec::with_capacity(count);
+        let mut current_offset = offset;
+        
+        for _ in 0..count {
+            let s = self.read_string(current_offset);
+            current_offset += 4 + s.len();
+            values.push(s);
+        }
+        
+        values
     }
 }
 
