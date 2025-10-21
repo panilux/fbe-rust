@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2025-10-21
+
+### Added
+- **From<Vec<u8>> trait for ReadBuffer:** Convenient constructor from byte vector
+- **Cross-platform struct example:** cross_struct.rs demonstrating PHP ↔ Rust compatibility
+
+### Improved
+- Better ReadBuffer ergonomics with From trait
+- Cross-platform struct serialization verified
+
+### Verified
+- ✅ Rust → PHP: Binary identical
+- ✅ PHP → Rust: Binary identical
+
 ## [0.0.4] - 2025-10-21
 
 ### Added
@@ -53,20 +67,19 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - User::serialize() now properly allocates buffer before writing
 - Side enum now has Default derive trait
-- Fixed cross_test.rs to use correct buffer API methods (data() instead of buffer())
+- Enum serialization uses i8 instead of i32 for correct binary format
 
 ### Verified
-- ✅ Rust → Rust round-trip serialization
-- ✅ PHP → PHP round-trip serialization
-- ✅ Rust → PHP cross-platform binary compatibility
-- ✅ PHP → Rust cross-platform binary compatibility
+- ✅ Cross-platform serialization working (PHP ↔ Rust)
+- ✅ Binary format matches between implementations
 
 ## [0.0.1] - 2025-10-20
 
 ### Added
-- Initial Rust FBE implementation
-- WriteBuffer and ReadBuffer structs
-- FieldModel traits
-- Basic type support (primitives)
-- Rust code generator (fbec-rust)
+- Initial FBE Rust implementation
+- WriteBuffer with basic types (bool, int8-64, uint8-64, float, double)
+- ReadBuffer with basic types
+- Basic test suite
+
+HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 
