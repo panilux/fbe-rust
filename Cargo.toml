@@ -1,7 +1,7 @@
 [package]
 name = "fbe-rust"
-version = "0.1.2"
-edition = "2021"
+version = "0.1.3"
+edition = "2024"
 authors = ["Panilux Team"]
 description = "Fast Binary Encoding (FBE) for Rust - High-performance, zero-copy binary serialization with 100% FBE specification alignment"
 license = "MIT"
