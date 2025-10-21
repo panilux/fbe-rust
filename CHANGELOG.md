@@ -164,3 +164,15 @@ HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 - 1 byte: has_value flag (0=null, 1=has value)
 - 4 bytes: pointer to data
 - At pointer: actual value
+
+## [0.1.2] - 2025-10-21
+
+### Added
+- Nested struct support (Address, UserWithAddress)
+- FBE-compliant struct serialization pattern
+- Comprehensive FBE ground truth validation
+
+### Validated
+- Rust → FBE Python: PASS
+- PHP → FBE Python: PASS
+- Rust ↔ PHP: Binary identical (233 bytes)
