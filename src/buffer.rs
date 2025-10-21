@@ -69,6 +69,11 @@ impl WriteBuffer {
         self.offset
     }
 
+    /// Set buffer size
+    pub fn set_size(&mut self, size: usize) {
+        self.size = size;
+    }
+
     /// Attach an empty memory buffer
     pub fn attach_new(&mut self) {
         self.buffer = Vec::new();
