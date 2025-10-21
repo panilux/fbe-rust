@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.8] - 2025-10-21
+
+### Added
+- **String Collection Support:** VectorString, ArrayString
+- **Buffer Methods:** write_vector_string, read_vector_string, write_array_string, read_array_string
+- **Field Models:** FieldModelVectorString, FieldModelArrayString (with mut variants)
+- **extra() implementation:** Dynamic size calculation for variable-length strings
+
+### Verified
+- ✅ String collections working
+- ✅ Variable-size string handling
+- ✅ Zero-cost abstractions maintained
+
 ## [0.0.7] - 2025-10-21
 
 ### Added
