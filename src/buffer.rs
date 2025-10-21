@@ -362,6 +362,48 @@ impl WriteBuffer {
         }
         current_offset - offset
     }
+
+    // ========================================================================
+    // Float/Double Collections
+    // ========================================================================
+
+    pub fn write_vector_f32(&mut self, offset: usize, values: &[f32]) -> usize {
+        let size = values.len();
+        let data_size = 4 + (size * 4);
+        let data_offset = self.allocate(data_size);
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        self.write_u32(data_offset - self.offset, size as u32);
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f32(data_offset - self.offset + 4 + (i * 4), value);
+        }
+        data_size
+    }
+
+    pub fn write_array_f32(&mut self, offset: usize, values: &[f32]) -> usize {
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f32(offset + (i * 4), value);
+        }
+        values.len() * 4
+    }
+
+    pub fn write_vector_f64(&mut self, offset: usize, values: &[f64]) -> usize {
+        let size = values.len();
+        let data_size = 4 + (size * 8);
+        let data_offset = self.allocate(data_size);
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        self.write_u32(data_offset - self.offset, size as u32);
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f64(data_offset - self.offset + 4 + (i * 8), value);
+        }
+        data_size
+    }
+
+    pub fn write_array_f64(&mut self, offset: usize, values: &[f64]) -> usize {
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f64(offset + (i * 8), value);
+        }
+        values.len() * 8
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -678,6 +720,48 @@ impl ReadBuffer {
             values.push(s);
         }
         
+        values
+    }
+
+    // ========================================================================
+    // Float/Double Collections
+    // ========================================================================
+
+    pub fn read_vector_f32(&self, offset: usize) -> Vec<f32> {
+        let pointer = self.read_u32(offset) as usize;
+        if pointer == 0 { return Vec::new(); }
+        let size = self.read_u32(pointer) as usize;
+        let mut values = Vec::with_capacity(size);
+        for i in 0..size {
+            values.push(self.read_f32(pointer + 4 + (i * 4)));
+        }
+        values
+    }
+
+    pub fn read_array_f32(&self, offset: usize, count: usize) -> Vec<f32> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            values.push(self.read_f32(offset + (i * 4)));
+        }
+        values
+    }
+
+    pub fn read_vector_f64(&self, offset: usize) -> Vec<f64> {
+        let pointer = self.read_u32(offset) as usize;
+        if pointer == 0 { return Vec::new(); }
+        let size = self.read_u32(pointer) as usize;
+        let mut values = Vec::with_capacity(size);
+        for i in 0..size {
+            values.push(self.read_f64(pointer + 4 + (i * 8)));
+        }
+        values
+    }
+
+    pub fn read_array_f64(&self, offset: usize, count: usize) -> Vec<f64> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            values.push(self.read_f64(offset + (i * 8)));
+        }
         values
     }
 }

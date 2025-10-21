@@ -1,3 +1,15 @@
+## [0.0.9] - 2025-10-21
+
+### Added
+- **Float/Double Collection Support:** VectorF32, VectorF64, ArrayF32, ArrayF64
+- **Buffer Methods:** write_vector_f32, read_vector_f32, write_vector_f64, read_vector_f64
+- **Buffer Methods:** write_array_f32, read_array_f32, write_array_f64, read_array_f64
+
+### Verified
+- ✅ Float collections working
+- ✅ Double collections working
+- ✅ Zero-cost abstractions maintained
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -126,4 +138,3 @@ All notable changes to this project will be documented in this file.
 - Basic test suite
 
 HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
-
