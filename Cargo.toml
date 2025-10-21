@@ -1,5 +1,5 @@
 [package]
-name = "fbe-rust"
+name = "fbe"
 version = "0.1.3"
 edition = "2024"
 authors = ["Panilux Team"]
@@ -10,7 +10,7 @@ keywords = ["fbe", "serialization", "binary", "encoding", "protocol"]
 categories = ["encoding", "data-structures"]
 readme = "README.md"
 homepage = "https://github.com/panilux/fbe-rust"
-documentation = "https://docs.rs/fbe-rust"
+documentation = "https://docs.rs/fbe"
 
 [dependencies]
 

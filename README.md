@@ -1,9 +1,9 @@
-# FBE Rust - Fast Binary Encoding for Rust
+# FBE - Fast Binary Encoding for Rust
 
 High-performance, zero-copy binary serialization library for Rust, fully compatible with the [Fast Binary Encoding](https://github.com/chronoxor/FastBinaryEncoding) specification.
 
-[![Crates.io](https://img.shields.io/crates/v/fbe-rust.svg)](https://crates.io/crates/fbe-rust)
-[![Documentation](https://docs.rs/fbe-rust/badge.svg)](https://docs.rs/fbe-rust)
+[![Crates.io](https://img.shields.io/crates/v/fbe.svg)](https://crates.io/crates/fbe)
+[![Documentation](https://docs.rs/fbe/badge.svg)](https://docs.rs/fbe)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Rust Version](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org)
 
@@ -24,13 +24,13 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-fbe-rust = "0.1.0"
+fbe = "0.1"
 ```
 
 Or use cargo:
 
 ```bash
-cargo add fbe-rust
+cargo add fbe
 ```
 
 ## Quick Start
@@ -38,7 +38,7 @@ cargo add fbe-rust
 ### Define Your Structs
 
 ```rust
-use fbe_rust::{WriteBuffer, ReadBuffer};
+use fbe::{WriteBuffer, ReadBuffer};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Order {
