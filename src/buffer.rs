@@ -362,6 +362,86 @@ impl WriteBuffer {
         }
         current_offset - offset
     }
+
+    // ========================================================================
+    // Float/Double Collections
+    // ========================================================================
+
+    pub fn write_vector_f32(&mut self, offset: usize, values: &[f32]) -> usize {
+        let size = values.len();
+        let data_size = 4 + (size * 4);
+        let data_offset = self.allocate(data_size);
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        self.write_u32(data_offset - self.offset, size as u32);
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f32(data_offset - self.offset + 4 + (i * 4), value);
+        }
+        data_size
+    }
+
+    pub fn write_array_f32(&mut self, offset: usize, values: &[f32]) -> usize {
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f32(offset + (i * 4), value);
+        }
+        values.len() * 4
+    }
+
+    pub fn write_vector_f64(&mut self, offset: usize, values: &[f64]) -> usize {
+        let size = values.len();
+        let data_size = 4 + (size * 8);
+        let data_offset = self.allocate(data_size);
+        self.write_u32(offset, (data_offset - self.offset) as u32);
+        self.write_u32(data_offset - self.offset, size as u32);
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f64(data_offset - self.offset + 4 + (i * 8), value);
+        }
+        data_size
+    }
+
+    pub fn write_array_f64(&mut self, offset: usize, values: &[f64]) -> usize {
+        for (i, &value) in values.iter().enumerate() {
+            self.write_f64(offset + (i * 8), value);
+        }
+        values.len() * 8
+    }
+
+    // Optional types
+    pub fn write_optional_i32(&mut self, offset: usize, value: Option<i32>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let data_offset = self.allocate(4);  // Allocate for i32
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_i32(data_offset, v);
+            }
+        }
+    }
+
+    pub fn write_optional_string(&mut self, offset: usize, value: Option<&str>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let len = v.len();
+                let data_offset = self.allocate(4 + len);  // Allocate for length + string
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_string(data_offset, v);
+            }
+        }
+    }
+
+    pub fn write_optional_f64(&mut self, offset: usize, value: Option<f64>) {
+        match value {
+            None => self.write_u8(offset, 0),
+            Some(v) => {
+                self.write_u8(offset, 1);
+                let data_offset = self.allocate(8);  // Allocate for f64
+                self.write_u32(offset + 1, data_offset as u32);
+                self.write_f64(data_offset, v);
+            }
+        }
+    }
 }
 
 /// Read buffer for FBE deserialization
@@ -679,6 +759,77 @@ impl ReadBuffer {
         }
         
         values
+    }
+
+    // ========================================================================
+    // Float/Double Collections
+    // ========================================================================
+
+    pub fn read_vector_f32(&self, offset: usize) -> Vec<f32> {
+        let pointer = self.read_u32(offset) as usize;
+        if pointer == 0 { return Vec::new(); }
+        let size = self.read_u32(pointer) as usize;
+        let mut values = Vec::with_capacity(size);
+        for i in 0..size {
+            values.push(self.read_f32(pointer + 4 + (i * 4)));
+        }
+        values
+    }
+
+    pub fn read_array_f32(&self, offset: usize, count: usize) -> Vec<f32> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            values.push(self.read_f32(offset + (i * 4)));
+        }
+        values
+    }
+
+    pub fn read_vector_f64(&self, offset: usize) -> Vec<f64> {
+        let pointer = self.read_u32(offset) as usize;
+        if pointer == 0 { return Vec::new(); }
+        let size = self.read_u32(pointer) as usize;
+        let mut values = Vec::with_capacity(size);
+        for i in 0..size {
+            values.push(self.read_f64(pointer + 4 + (i * 8)));
+        }
+        values
+    }
+
+    pub fn read_array_f64(&self, offset: usize, count: usize) -> Vec<f64> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            values.push(self.read_f64(offset + (i * 8)));
+        }
+        values
+    }
+
+    // Optional types
+    pub fn has_value(&self, offset: usize) -> bool {
+        self.read_u8(offset) != 0
+    }
+
+    pub fn read_optional_i32(&self, offset: usize) -> Option<i32> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_i32(data_offset))
+    }
+
+    pub fn read_optional_string(&self, offset: usize) -> Option<String> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_string(data_offset))
+    }
+
+    pub fn read_optional_f64(&self, offset: usize) -> Option<f64> {
+        if !self.has_value(offset) {
+            return None;
+        }
+        let data_offset = self.read_u32(offset + 1) as usize;
+        Some(self.read_f64(data_offset))
     }
 }
 

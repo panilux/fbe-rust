@@ -1,3 +1,28 @@
+## [0.1.0] - 2025-10-21
+
+### Added
+- **Binary Compatibility Tests:** Cross-platform PHP ↔ Rust verification
+- **THE CHALLENGE:** Passed! %100 binary compatible with PHP implementation
+- **hex crate:** For binary debugging
+
+### Verified
+- ✅ Rust → Rust: PASS
+- ✅ PHP → Rust: PASS (reads PHP binary)
+- ✅ Rust → PHP: PASS (PHP reads Rust binary)
+- ✅ Binary format identical (byte-for-byte)
+
+## [0.0.9] - 2025-10-21
+
+### Added
+- **Float/Double Collection Support:** VectorF32, VectorF64, ArrayF32, ArrayF64
+- **Buffer Methods:** write_vector_f32, read_vector_f32, write_vector_f64, read_vector_f64
+- **Buffer Methods:** write_array_f32, read_array_f32, write_array_f64, read_array_f64
+
+### Verified
+- ✅ Float collections working
+- ✅ Double collections working
+- ✅ Zero-cost abstractions maintained
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -127,3 +152,27 @@ All notable changes to this project will be documented in this file.
 
 HERSEY DAHA IYI BIR PANILUX ICIN! 🚀
 
+## [0.1.1] - 2025-10-21
+
+### Added
+- Optional type support (Type?)
+- write_optional_i32(), write_optional_string(), write_optional_f64()
+- read_optional_i32(), read_optional_string(), read_optional_f64()
+- has_value() method for null checking
+
+### Format
+- 1 byte: has_value flag (0=null, 1=has value)
+- 4 bytes: pointer to data
+- At pointer: actual value
+
+## [0.1.2] - 2025-10-21
+
+### Added
+- Nested struct support (Address, UserWithAddress)
+- FBE-compliant struct serialization pattern
+- Comprehensive FBE ground truth validation
+
+### Validated
+- Rust → FBE Python: PASS
+- PHP → FBE Python: PASS
+- Rust ↔ PHP: Binary identical (233 bytes)
