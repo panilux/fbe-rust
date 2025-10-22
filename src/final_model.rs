@@ -552,3 +552,156 @@ impl<'a, T> FinalModelList<'a, T> {
         4 + size * std::mem::size_of::<T>()
     }
 }
+
+
+// ============================================================================
+// Optional<T> (FinalModel - inline format)
+// ============================================================================
+
+/// FinalModel for optional<T> (inline format, no pointers)
+/// 
+/// Format:
+/// - 1 byte: has_value flag (0 = null, 1 = has value)
+/// - If has_value: followed by inline value data
+pub struct FinalModelOptional<'a, T, M>
+where
+    M: FinalModel,
+{
+    buffer: &'a [u8],
+    offset: usize,
+    value_model_fn: fn(&'a [u8], usize) -> M,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<'a, T, M> FinalModelOptional<'a, T, M>
+where
+    M: FinalModel,
+{
+    #[inline]
+    pub fn new(buffer: &'a [u8], offset: usize, value_model_fn: fn(&'a [u8], usize) -> M) -> Self {
+        Self {
+            buffer,
+            offset,
+            value_model_fn,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    #[inline]
+    pub fn has_value(&self) -> bool {
+        if self.buffer.len() < self.offset + 1 {
+            return false;
+        }
+        self.buffer[self.offset] != 0
+    }
+
+    pub fn get<F>(&self, extract_fn: F) -> Option<T>
+    where
+        F: Fn(&M) -> T,
+    {
+        if !self.has_value() {
+            return None;
+        }
+
+        let value_offset = self.offset + 1;
+        let value_model = (self.value_model_fn)(self.buffer, value_offset);
+        Some(extract_fn(&value_model))
+    }
+}
+
+impl<'a, T, M> FinalModel for FinalModelOptional<'a, T, M>
+where
+    M: FinalModel,
+{
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        if !self.has_value() {
+            return 1; // Only flag byte
+        }
+        
+        let value_offset = self.offset + 1;
+        let value_model = (self.value_model_fn)(self.buffer, value_offset);
+        1 + value_model.size()
+    }
+
+    fn extra(&self) -> usize {
+        0 // Inline format, no extra data
+    }
+}
+
+/// Mutable version for writing
+pub struct FinalModelOptionalMut<'a, T, M>
+where
+    M: FinalModel,
+{
+    buffer: &'a mut crate::buffer::WriteBuffer,
+    offset: usize,
+    value_model_fn: fn(&'a mut crate::buffer::WriteBuffer, usize) -> M,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<'a, T, M> FinalModelOptionalMut<'a, T, M>
+where
+    M: FinalModel,
+{
+    #[inline]
+    pub fn new(
+        buffer: &'a mut crate::buffer::WriteBuffer,
+        offset: usize,
+        value_model_fn: fn(&'a mut crate::buffer::WriteBuffer, usize) -> M,
+    ) -> Self {
+        Self {
+            buffer,
+            offset,
+            value_model_fn,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn set_none(&mut self) {
+        self.buffer.write_byte(self.offset, 0);
+    }
+
+    pub fn set_some<F>(self, value: T, write_fn: F)
+    where
+        F: FnOnce(&mut M, T),
+    {
+        // Write has_value = 1
+        self.buffer.write_byte(self.offset, 1);
+        
+        // Write value inline
+        let value_offset = self.offset + 1;
+        let mut value_model = (self.value_model_fn)(self.buffer, value_offset);
+        write_fn(&mut value_model, value);
+    }
+}
+
+impl<'a, T, M> FinalModel for FinalModelOptionalMut<'a, T, M>
+where
+    M: FinalModel,
+{
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        1 // Minimum size (flag byte)
+    }
+
+    fn extra(&self) -> usize {
+        0 // Inline format
+    }
+}
+
+

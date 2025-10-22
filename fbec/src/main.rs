@@ -204,6 +204,8 @@ impl Generator {
 
         for struct_def in &self.structs {
             self.generate_struct(struct_def, output_dir)?;
+            self.generate_model(struct_def, output_dir)?;
+            self.generate_final_model(struct_def, output_dir)?;
         }
 
         self.generate_mod_file(output_dir)?;
@@ -321,6 +323,252 @@ impl Generator {
             format!("Option<{}>", base_type)
         } else {
             base_type
+        }
+    }
+
+    fn generate_model(&self, struct_def: &StructDef, output_dir: &str) -> Result<(), String> {
+        let file_name = format!("{}/{}_model.rs", output_dir, to_snake_case(&struct_def.name));
+
+        let mut code = format!("//! {} Model (FieldModel-based)\n\n", struct_def.name);
+        code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n");
+        code.push_str("use crate::field_model::*;\n\n");
+
+        // Struct definition
+        code.push_str("#[derive(Debug)]\n");
+        code.push_str(&format!("pub struct {}Model<'a> {{\n", struct_def.name));
+        code.push_str("    buffer: &'a [u8],\n");
+        code.push_str("    offset: usize,\n");
+        
+        // Field models
+        for field in &struct_def.fields {
+            let field_model_type = self.get_field_model_type(&field.fbe_type);
+            code.push_str(&format!("    {}: {},\n", field.name, field_model_type));
+        }
+        code.push_str("}\n\n");
+
+        // Mutable struct definition
+        code.push_str("#[derive(Debug)]\n");
+        code.push_str(&format!("pub struct {}ModelMut<'a> {{\n", struct_def.name));
+        code.push_str("    buffer: &'a mut WriteBuffer,\n");
+        code.push_str("    offset: usize,\n");
+        code.push_str("}\n\n");
+
+        // Read-only implementation
+        code.push_str(&format!("impl<'a> {}Model<'a> {{\n", struct_def.name));
+        code.push_str("    pub fn new(buffer: &'a [u8], offset: usize) -> Self {\n");
+        code.push_str("        Self {\n");
+        code.push_str("            buffer,\n");
+        code.push_str("            offset,\n");
+        
+        let mut field_offset = 0;
+        for field in &struct_def.fields {
+            let field_model_type = self.get_field_model_type(&field.fbe_type);
+            code.push_str(&format!("            {}: {}::new(buffer, offset + {}),\n", 
+                field.name, field_model_type, field_offset));
+            field_offset += self.get_field_size(&field.fbe_type);
+        }
+        
+        code.push_str("        }\n");
+        code.push_str("    }\n\n");
+
+        // Get method
+        code.push_str(&format!("    pub fn get(&self) -> {} {{\n", struct_def.name));
+        code.push_str(&format!("        {} {{\n", struct_def.name));
+        for field in &struct_def.fields {
+            code.push_str(&format!("            {}: self.{}.get(),\n", field.name, field.name));
+        }
+        code.push_str("        }\n");
+        code.push_str("    }\n");
+        code.push_str("}\n\n");
+
+        // Mutable implementation
+        code.push_str(&format!("impl<'a> {}ModelMut<'a> {{\n", struct_def.name));
+        code.push_str("    pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {\n");
+        code.push_str("        Self { buffer, offset }\n");
+        code.push_str("    }\n\n");
+
+        // Set method
+        code.push_str(&format!("    pub fn set(&mut self, value: &{}) {{\n", struct_def.name));
+        let mut field_offset = 0;
+        for field in &struct_def.fields {
+            let field_model_type_mut = self.get_field_model_type_mut(&field.fbe_type);
+            code.push_str(&format!("        let mut field_{} = {}::new(self.buffer, self.offset + {});\n",
+                field.name, field_model_type_mut, field_offset));
+            code.push_str(&format!("        field_{}.set(value.{});\n", field.name, field.name));
+            field_offset += self.get_field_size(&field.fbe_type);
+        }
+        code.push_str("    }\n");
+        code.push_str("}\n");
+
+        fs::write(&file_name, code)
+            .map_err(|e| format!("Failed to write {}: {}", file_name, e))?;
+        Ok(())
+    }
+
+    fn generate_final_model(&self, struct_def: &StructDef, output_dir: &str) -> Result<(), String> {
+        let file_name = format!("{}/{}_final_model.rs", output_dir, to_snake_case(&struct_def.name));
+
+        let mut code = format!("//! {} FinalModel (inline format)\n\n", struct_def.name);
+        code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n");
+        code.push_str("use crate::final_model::*;\n\n");
+
+        // Struct definition
+        code.push_str("#[derive(Debug)]\n");
+        code.push_str(&format!("pub struct {}FinalModel<'a> {{\n", struct_def.name));
+        code.push_str("    buffer: &'a [u8],\n");
+        code.push_str("    offset: usize,\n");
+        code.push_str("}\n\n");
+
+        // Mutable struct definition
+        code.push_str("#[derive(Debug)]\n");
+        code.push_str(&format!("pub struct {}FinalModelMut<'a> {{\n", struct_def.name));
+        code.push_str("    buffer: &'a mut WriteBuffer,\n");
+        code.push_str("    offset: usize,\n");
+        code.push_str("}\n\n");
+
+        // Read-only implementation
+        code.push_str(&format!("impl<'a> {}FinalModel<'a> {{\n", struct_def.name));
+        code.push_str("    pub fn new(buffer: &'a [u8], offset: usize) -> Self {\n");
+        code.push_str("        Self { buffer, offset }\n");
+        code.push_str("    }\n\n");
+
+        // Get method
+        code.push_str(&format!("    pub fn get(&self) -> {} {{\n", struct_def.name));
+        code.push_str("        let mut offset = self.offset;\n");
+        code.push_str(&format!("        {} {{\n", struct_def.name));
+        for field in &struct_def.fields {
+            let final_model_type = self.get_final_model_type(&field.fbe_type);
+            code.push_str(&format!("            {}: {{\n", field.name));
+            code.push_str(&format!("                let model = {}::new(self.buffer, offset);\n", final_model_type));
+            code.push_str("                let value = model.get();\n");
+            code.push_str("                offset += model.size();\n");
+            code.push_str("                value\n");
+            code.push_str("            },\n");
+        }
+        code.push_str("        }\n");
+        code.push_str("    }\n\n");
+
+        // Size method
+        code.push_str("    pub fn size(&self) -> usize {\n");
+        code.push_str("        let mut size = 0;\n");
+        code.push_str("        let mut offset = self.offset;\n");
+        for field in &struct_def.fields {
+            let final_model_type = self.get_final_model_type(&field.fbe_type);
+            code.push_str(&format!("        let model_{} = {}::new(self.buffer, offset);\n",
+                field.name, final_model_type));
+            code.push_str(&format!("        let field_size = model_{}.size();\n", field.name));
+            code.push_str("        size += field_size;\n");
+            code.push_str("        offset += field_size;\n");
+        }
+        code.push_str("        size\n");
+        code.push_str("    }\n");
+        code.push_str("}\n\n");
+
+        // Mutable implementation
+        code.push_str(&format!("impl<'a> {}FinalModelMut<'a> {{\n", struct_def.name));
+        code.push_str("    pub fn new(buffer: &'a mut WriteBuffer, offset: usize) -> Self {\n");
+        code.push_str("        Self { buffer, offset }\n");
+        code.push_str("    }\n\n");
+
+        // Set method
+        code.push_str(&format!("    pub fn set(&mut self, value: &{}) {{\n", struct_def.name));
+        code.push_str("        let mut offset = self.offset;\n");
+        for field in &struct_def.fields {
+            let final_model_type_mut = self.get_final_model_type_mut(&field.fbe_type);
+            code.push_str(&format!("        {{\n"));
+            code.push_str(&format!("            let mut model = {}::new(self.buffer, offset);\n", final_model_type_mut));
+            code.push_str(&format!("            model.set(value.{});\n", field.name));
+            code.push_str("            offset += model.size();\n");
+            code.push_str("        }\n");
+        }
+        code.push_str("    }\n");
+        code.push_str("}\n");
+
+        fs::write(&file_name, code)
+            .map_err(|e| format!("Failed to write {}: {}", file_name, e))?;
+        Ok(())
+    }
+
+    fn get_field_model_type(&self, fbe_type: &str) -> String {
+        match fbe_type {
+            "bool" => "FieldModelBool<'a>".to_string(),
+            "int8" => "FieldModelI8<'a>".to_string(),
+            "uint8" => "FieldModelU8<'a>".to_string(),
+            "int16" => "FieldModelI16<'a>".to_string(),
+            "uint16" => "FieldModelU16<'a>".to_string(),
+            "int32" => "FieldModelI32<'a>".to_string(),
+            "uint32" => "FieldModelU32<'a>".to_string(),
+            "int64" => "FieldModelI64<'a>".to_string(),
+            "uint64" => "FieldModelU64<'a>".to_string(),
+            "float" => "FieldModelF32<'a>".to_string(),
+            "double" => "FieldModelF64<'a>".to_string(),
+            "string" => "FieldModelString<'a>".to_string(),
+            _ => format!("{}Model<'a>", fbe_type),
+        }
+    }
+
+    fn get_field_model_type_mut(&self, fbe_type: &str) -> String {
+        match fbe_type {
+            "bool" => "FieldModelBoolMut".to_string(),
+            "int8" => "FieldModelI8Mut".to_string(),
+            "uint8" => "FieldModelU8Mut".to_string(),
+            "int16" => "FieldModelI16Mut".to_string(),
+            "uint16" => "FieldModelU16Mut".to_string(),
+            "int32" => "FieldModelI32Mut".to_string(),
+            "uint32" => "FieldModelU32Mut".to_string(),
+            "int64" => "FieldModelI64Mut".to_string(),
+            "uint64" => "FieldModelU64Mut".to_string(),
+            "float" => "FieldModelF32Mut".to_string(),
+            "double" => "FieldModelF64Mut".to_string(),
+            "string" => "FieldModelStringMut".to_string(),
+            _ => format!("{}ModelMut", fbe_type),
+        }
+    }
+
+    fn get_final_model_type(&self, fbe_type: &str) -> String {
+        match fbe_type {
+            "bool" => "FinalModelBool<'a>".to_string(),
+            "int8" => "FinalModelI8<'a>".to_string(),
+            "uint8" => "FinalModelU8<'a>".to_string(),
+            "int16" => "FinalModelI16<'a>".to_string(),
+            "uint16" => "FinalModelU16<'a>".to_string(),
+            "int32" => "FinalModelI32<'a>".to_string(),
+            "uint32" => "FinalModelU32<'a>".to_string(),
+            "int64" => "FinalModelI64<'a>".to_string(),
+            "uint64" => "FinalModelU64<'a>".to_string(),
+            "float" => "FinalModelF32<'a>".to_string(),
+            "double" => "FinalModelF64<'a>".to_string(),
+            "string" => "FinalModelString<'a>".to_string(),
+            _ => format!("{}FinalModel<'a>", fbe_type),
+        }
+    }
+
+    fn get_final_model_type_mut(&self, fbe_type: &str) -> String {
+        match fbe_type {
+            "bool" => "FinalModelBoolMut".to_string(),
+            "int8" => "FinalModelI8Mut".to_string(),
+            "uint8" => "FinalModelU8Mut".to_string(),
+            "int16" => "FinalModelI16Mut".to_string(),
+            "uint16" => "FinalModelU16Mut".to_string(),
+            "int32" => "FinalModelI32Mut".to_string(),
+            "uint32" => "FinalModelU32Mut".to_string(),
+            "int64" => "FinalModelI64Mut".to_string(),
+            "uint64" => "FinalModelU64Mut".to_string(),
+            "float" => "FinalModelF32Mut".to_string(),
+            "double" => "FinalModelF64Mut".to_string(),
+            "string" => "FinalModelStringMut".to_string(),
+            _ => format!("{}FinalModelMut", fbe_type),
+        }
+    }
+
+    fn get_field_size(&self, fbe_type: &str) -> usize {
+        match fbe_type {
+            "bool" | "int8" | "uint8" => 1,
+            "int16" | "uint16" => 2,
+            "int32" | "uint32" | "float" => 4,
+            "int64" | "uint64" | "double" => 8,
+            "string" => 4, // Pointer
+            _ => 4, // Default pointer size
         }
     }
 
