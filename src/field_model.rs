@@ -113,6 +113,9 @@ impl_primitive_field_model!(
     read_bool,
     write_bool
 );
+impl_primitive_field_model!(FieldModelByte, FieldModelByteMut, u8, 1, read_byte, write_byte);
+impl_primitive_field_model!(FieldModelChar, FieldModelCharMut, u8, 1, read_char, write_char);
+impl_primitive_field_model!(FieldModelWChar, FieldModelWCharMut, u32, 4, read_wchar, write_wchar);
 impl_primitive_field_model!(FieldModelI8, FieldModelI8Mut, i8, 1, read_i8, write_i8);
 impl_primitive_field_model!(FieldModelI16, FieldModelI16Mut, i16, 2, read_i16, write_i16);
 impl_primitive_field_model!(FieldModelI32, FieldModelI32Mut, i32, 4, read_i32, write_i32);
