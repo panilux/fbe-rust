@@ -288,6 +288,13 @@ impl WriteBuffer {
         self.buffer[self.offset + offset + 15] = if negative { 0x80 } else { 0x00 };
     }
 
+    /// Write list of i32 values (linked list, same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    pub fn write_list_i32(&mut self, offset: usize, values: &[i32]) -> usize {
+        // List uses same format as vector (pointer-based)
+        self.write_vector_i32(offset, values)
+    }
+
     /// Write vector of i32 values
     /// Format: 4-byte offset pointer → (4-byte size + elements)
     pub fn write_vector_i32(&mut self, offset: usize, values: &[i32]) -> usize {
@@ -693,6 +700,14 @@ impl ReadBuffer {
         let negative = (self.buffer[self.offset + offset + 15] & 0x80) != 0;
 
         (value, scale, negative)
+    }
+
+    /// Read list of i32 values (linked list, same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    #[must_use]
+    pub fn read_list_i32(&self, offset: usize) -> Vec<i32> {
+        // List uses same format as vector (pointer-based)
+        self.read_vector_i32(offset)
     }
 
     /// Read vector of i32 values
