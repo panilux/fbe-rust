@@ -7,6 +7,7 @@ pub mod buffer;
 pub mod defaults;
 pub mod field_model;
 pub mod field_model_collections;
+pub mod final_model;
 pub mod inheritance;
 pub mod keys;
 pub mod model;

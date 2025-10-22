@@ -165,6 +165,21 @@ impl WriteBuffer {
 
     // Write primitive types
     #[inline]
+    pub fn write_byte(&mut self, offset: usize, value: u8) {
+        self.write_u8(offset, value);
+    }
+
+    #[inline]
+    pub fn write_char(&mut self, offset: usize, value: u8) {
+        self.buffer[self.offset + offset] = value;
+    }
+
+    #[inline]
+    pub fn write_wchar(&mut self, offset: usize, value: u32) {
+        self.write_u32(offset, value);
+    }
+
+    #[inline]
     pub fn write_bool(&mut self, offset: usize, value: bool) {
         self.buffer[self.offset + offset] = value as u8;
     }
@@ -271,6 +286,13 @@ impl WriteBuffer {
         self.buffer[self.offset + offset + 14] = scale;
         // Byte 15 = sign
         self.buffer[self.offset + offset + 15] = if negative { 0x80 } else { 0x00 };
+    }
+
+    /// Write list of i32 values (linked list, same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    pub fn write_list_i32(&mut self, offset: usize, values: &[i32]) -> usize {
+        // List uses same format as vector (pointer-based)
+        self.write_vector_i32(offset, values)
     }
 
     /// Write vector of i32 values
@@ -539,6 +561,24 @@ impl ReadBuffer {
     // Read primitive types
     #[must_use]
     #[inline]
+    pub fn read_byte(&self, offset: usize) -> u8 {
+        self.read_u8(offset)
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn read_char(&self, offset: usize) -> u8 {
+        self.buffer[self.offset + offset]
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn read_wchar(&self, offset: usize) -> u32 {
+        self.read_u32(offset)
+    }
+
+    #[must_use]
+    #[inline]
     pub fn read_bool(&self, offset: usize) -> bool {
         self.buffer[self.offset + offset] != 0
     }
@@ -660,6 +700,14 @@ impl ReadBuffer {
         let negative = (self.buffer[self.offset + offset + 15] & 0x80) != 0;
 
         (value, scale, negative)
+    }
+
+    /// Read list of i32 values (linked list, same format as vector)
+    /// Format: 4-byte offset pointer → (4-byte size + elements)
+    #[must_use]
+    pub fn read_list_i32(&self, offset: usize) -> Vec<i32> {
+        // List uses same format as vector (pointer-based)
+        self.read_vector_i32(offset)
     }
 
     /// Read vector of i32 values

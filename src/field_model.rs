@@ -113,6 +113,9 @@ impl_primitive_field_model!(
     read_bool,
     write_bool
 );
+impl_primitive_field_model!(FieldModelByte, FieldModelByteMut, u8, 1, read_byte, write_byte);
+impl_primitive_field_model!(FieldModelChar, FieldModelCharMut, u8, 1, read_char, write_char);
+impl_primitive_field_model!(FieldModelWChar, FieldModelWCharMut, u32, 4, read_wchar, write_wchar);
 impl_primitive_field_model!(FieldModelI8, FieldModelI8Mut, i8, 1, read_i8, write_i8);
 impl_primitive_field_model!(FieldModelI16, FieldModelI16Mut, i16, 2, read_i16, write_i16);
 impl_primitive_field_model!(FieldModelI32, FieldModelI32Mut, i32, 4, read_i32, write_i32);
@@ -398,3 +401,258 @@ impl<'a> FieldModel for FieldModelDecimalMut<'a> {
         16
     }
 }
+
+
+// ============================================================================
+// Collection Field Models
+// ============================================================================
+
+/// FieldModel for vector<T> (pointer-based, dynamic size)
+pub struct FieldModelVector<'a, T> {
+    buffer: &'a [u8],
+    offset: usize,
+    item_model: fn(&'a [u8], usize) -> T,
+}
+
+impl<'a, T> FieldModelVector<'a, T> {
+    pub fn new(buffer: &'a [u8], offset: usize, item_model: fn(&'a [u8], usize) -> T) -> Self {
+        Self { buffer, offset, item_model }
+    }
+
+    pub fn get(&self) -> Vec<T> {
+        let mut read_buf = ReadBuffer::new();
+        read_buf.attach_buffer(self.buffer, 0, self.buffer.len());
+        
+        // Read pointer at offset
+        let pointer = read_buf.read_u32(self.offset) as usize;
+        if pointer == 0 {
+            return Vec::new();
+        }
+        
+        // Read size at pointer location
+        let size = read_buf.read_u32(pointer) as usize;
+        let mut result = Vec::with_capacity(size);
+        
+        // Read items
+        let mut item_offset = pointer + 4;
+        for _ in 0..size {
+            result.push((self.item_model)(self.buffer, item_offset));
+            item_offset += std::mem::size_of::<T>();
+        }
+        
+        result
+    }
+}
+
+impl<'a, T> FieldModel for FieldModelVector<'a, T> {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        4 // Pointer size
+    }
+}
+
+/// FieldModel for array<T, N> (inline, fixed size)
+pub struct FieldModelArray<'a, T, const N: usize> {
+    buffer: &'a [u8],
+    offset: usize,
+    item_model: fn(&'a [u8], usize) -> T,
+}
+
+impl<'a, T, const N: usize> FieldModelArray<'a, T, N> {
+    pub fn new(buffer: &'a [u8], offset: usize, item_model: fn(&'a [u8], usize) -> T) -> Self {
+        Self { buffer, offset, item_model }
+    }
+
+    pub fn get(&self) -> [T; N] {
+        let mut result = Vec::with_capacity(N);
+        let mut item_offset = self.offset;
+        
+        for _ in 0..N {
+            result.push((self.item_model)(self.buffer, item_offset));
+            item_offset += std::mem::size_of::<T>();
+        }
+        
+        result.try_into().unwrap_or_else(|_| panic!("Array size mismatch"))
+    }
+}
+
+impl<'a, T, const N: usize> FieldModel for FieldModelArray<'a, T, N> {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        N * std::mem::size_of::<T>()
+    }
+}
+
+/// FieldModel for map<K, V> (pointer-based)
+pub struct FieldModelMap<'a, K, V> {
+    buffer: &'a [u8],
+    offset: usize,
+    key_model: fn(&'a [u8], usize) -> K,
+    value_model: fn(&'a [u8], usize) -> V,
+}
+
+impl<'a, K, V> FieldModelMap<'a, K, V> {
+    pub fn new(
+        buffer: &'a [u8],
+        offset: usize,
+        key_model: fn(&'a [u8], usize) -> K,
+        value_model: fn(&'a [u8], usize) -> V,
+    ) -> Self {
+        Self { buffer, offset, key_model, value_model }
+    }
+
+    pub fn get(&self) -> std::collections::HashMap<K, V>
+    where
+        K: std::hash::Hash + Eq,
+    {
+        let mut read_buf = ReadBuffer::new();
+        read_buf.attach_buffer(self.buffer, 0, self.buffer.len());
+        
+        let pointer = read_buf.read_u32(self.offset) as usize;
+        if pointer == 0 {
+            return std::collections::HashMap::new();
+        }
+        
+        let size = read_buf.read_u32(pointer) as usize;
+        let mut result = std::collections::HashMap::with_capacity(size);
+        
+        let mut item_offset = pointer + 4;
+        for _ in 0..size {
+            let key = (self.key_model)(self.buffer, item_offset);
+            item_offset += std::mem::size_of::<K>();
+            let value = (self.value_model)(self.buffer, item_offset);
+            item_offset += std::mem::size_of::<V>();
+            result.insert(key, value);
+        }
+        
+        result
+    }
+}
+
+impl<'a, K, V> FieldModel for FieldModelMap<'a, K, V> {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        4 // Pointer size
+    }
+}
+
+/// FieldModel for set<T> (pointer-based)
+pub struct FieldModelSet<'a, T> {
+    buffer: &'a [u8],
+    offset: usize,
+    item_model: fn(&'a [u8], usize) -> T,
+}
+
+impl<'a, T> FieldModelSet<'a, T> {
+    pub fn new(buffer: &'a [u8], offset: usize, item_model: fn(&'a [u8], usize) -> T) -> Self {
+        Self { buffer, offset, item_model }
+    }
+
+    pub fn get(&self) -> std::collections::HashSet<T>
+    where
+        T: std::hash::Hash + Eq,
+    {
+        let mut read_buf = ReadBuffer::new();
+        read_buf.attach_buffer(self.buffer, 0, self.buffer.len());
+        
+        let pointer = read_buf.read_u32(self.offset) as usize;
+        if pointer == 0 {
+            return std::collections::HashSet::new();
+        }
+        
+        let size = read_buf.read_u32(pointer) as usize;
+        let mut result = std::collections::HashSet::with_capacity(size);
+        
+        let mut item_offset = pointer + 4;
+        for _ in 0..size {
+            result.insert((self.item_model)(self.buffer, item_offset));
+            item_offset += std::mem::size_of::<T>();
+        }
+        
+        result
+    }
+}
+
+impl<'a, T> FieldModel for FieldModelSet<'a, T> {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        4 // Pointer size
+    }
+}
+
+/// FieldModel for list<T> (pointer-based, linked list)
+pub struct FieldModelList<'a, T> {
+    buffer: &'a [u8],
+    offset: usize,
+    item_model: fn(&'a [u8], usize) -> T,
+}
+
+impl<'a, T> FieldModelList<'a, T> {
+    pub fn new(buffer: &'a [u8], offset: usize, item_model: fn(&'a [u8], usize) -> T) -> Self {
+        Self { buffer, offset, item_model }
+    }
+
+    pub fn get(&self) -> std::collections::LinkedList<T> {
+        let mut read_buf = ReadBuffer::new();
+        read_buf.attach_buffer(self.buffer, 0, self.buffer.len());
+        
+        let pointer = read_buf.read_u32(self.offset) as usize;
+        if pointer == 0 {
+            return std::collections::LinkedList::new();
+        }
+        
+        let size = read_buf.read_u32(pointer) as usize;
+        let mut result = std::collections::LinkedList::new();
+        
+        let mut item_offset = pointer + 4;
+        for _ in 0..size {
+            result.push_back((self.item_model)(self.buffer, item_offset));
+            item_offset += std::mem::size_of::<T>();
+        }
+        
+        result
+    }
+}
+
+impl<'a, T> FieldModel for FieldModelList<'a, T> {
+    fn offset(&self) -> usize {
+        self.offset
+    }
+
+    fn set_offset(&mut self, offset: usize) {
+        self.offset = offset;
+    }
+
+    fn size(&self) -> usize {
+        4 // Pointer size
+    }
+}
+
