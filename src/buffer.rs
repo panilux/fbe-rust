@@ -165,6 +165,21 @@ impl WriteBuffer {
 
     // Write primitive types
     #[inline]
+    pub fn write_byte(&mut self, offset: usize, value: u8) {
+        self.write_u8(offset, value);
+    }
+
+    #[inline]
+    pub fn write_char(&mut self, offset: usize, value: u8) {
+        self.buffer[self.offset + offset] = value;
+    }
+
+    #[inline]
+    pub fn write_wchar(&mut self, offset: usize, value: u32) {
+        self.write_u32(offset, value);
+    }
+
+    #[inline]
     pub fn write_bool(&mut self, offset: usize, value: bool) {
         self.buffer[self.offset + offset] = value as u8;
     }
@@ -537,6 +552,24 @@ impl ReadBuffer {
     }
 
     // Read primitive types
+    #[must_use]
+    #[inline]
+    pub fn read_byte(&self, offset: usize) -> u8 {
+        self.read_u8(offset)
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn read_char(&self, offset: usize) -> u8 {
+        self.buffer[self.offset + offset]
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn read_wchar(&self, offset: usize) -> u32 {
+        self.read_u32(offset)
+    }
+
     #[must_use]
     #[inline]
     pub fn read_bool(&self, offset: usize) -> bool {
