@@ -250,8 +250,9 @@ impl Generator {
         let file_name = format!("{}/{}.rs", output_dir, to_snake_case(&struct_def.name));
 
         let mut code = format!("//! {} struct\n\n", struct_def.name);
-        code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n\n");
-        code.push_str("#[derive(Debug, Clone, Default)]\n");
+        code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n");
+        code.push_str("use serde::{{Serialize, Deserialize}};\n\n");
+        code.push_str("#[derive(Debug, Clone, Default, Serialize, Deserialize)]\n");
         code.push_str(&format!("pub struct {} {{\n", struct_def.name));
         
         for field in &struct_def.fields {
@@ -280,6 +281,17 @@ impl Generator {
             code.push_str(&self.generate_deserialize_field(field));
         }
         code.push_str("        }\n");
+        code.push_str("    }\n\n");
+
+        // Add JSON serialization methods
+        code.push_str("    /// Convert struct to JSON string\n");
+        code.push_str("    pub fn to_json(&self) -> String {\n");
+        code.push_str("        serde_json::to_string(self).unwrap()\n");
+        code.push_str("    }\n\n");
+
+        code.push_str("    /// Create struct from JSON string\n");
+        code.push_str("    pub fn from_json(json: &str) -> Self {\n");
+        code.push_str("        serde_json::from_str(json).unwrap()\n");
         code.push_str("    }\n");
         code.push_str("}\n");
 
