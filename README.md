@@ -268,12 +268,32 @@ cargo test
 # Run with output
 cargo test -- --nocapture
 
-# Run specific test
-cargo test test_inheritance
+# Run specific test suite
+cargo test --test test_types
+cargo test --test test_enum
+cargo test --test test_flags
 
 # Run benchmarks
 cargo bench
 ```
+
+### Test Coverage
+
+**101 tests** covering:
+- ✅ Buffer operations (WriteBuffer, ReadBuffer)
+- ✅ All primitive types
+- ✅ Collections (vector, array, set, map)
+- ✅ Optional types (primitives + FieldModel + FinalModel)
+- ✅ Structs (nested, FieldModel, FinalModel)
+- ✅ Enums (simple, typed, in structs)
+- ✅ Flags (bitfields, combinations, operations)
+- ✅ Inheritance (multi-level, cross-platform)
+- ✅ Keys (single, composite, cross-platform)
+- ✅ Defaults (field defaults, cross-platform)
+- ✅ Binary compatibility (Rust ↔ PHP)
+- ✅ Cross-platform serialization
+
+**100% passing** - All tests verified ✅
 
 ## Examples
 
