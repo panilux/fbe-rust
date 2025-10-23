@@ -251,7 +251,8 @@ impl Generator {
 
         let mut code = format!("//! {} struct\n\n", struct_def.name);
         code.push_str("use crate::buffer::{{WriteBuffer, ReadBuffer}};\n");
-        code.push_str("use serde::{{Serialize, Deserialize}};\n\n");
+        code.push_str("use serde::{{Serialize, Deserialize}};\n");
+        code.push_str("use std::fmt;\n\n");
         code.push_str("#[derive(Debug, Clone, Default, Serialize, Deserialize)]\n");
         code.push_str(&format!("pub struct {} {{\n", struct_def.name));
         
@@ -292,6 +293,24 @@ impl Generator {
         code.push_str("    /// Create struct from JSON string\n");
         code.push_str("    pub fn from_json(json: &str) -> Self {\n");
         code.push_str("        serde_json::from_str(json).unwrap()\n");
+        code.push_str("    }\n");
+        code.push_str("}\n\n");
+
+        // Add Display trait for logging
+        code.push_str(&format!("impl fmt::Display for {} {{\n", struct_def.name));
+        code.push_str("    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n");
+        code.push_str(&format!("        write!(f, \"{}(", struct_def.name));
+        for (i, field) in struct_def.fields.iter().enumerate() {
+            if i > 0 {
+                code.push_str(", ");
+            }
+            code.push_str(&format!("{}={{:?}}", field.name));
+        }
+        code.push_str(")\"\n");
+        for field in &struct_def.fields {
+            code.push_str(&format!("            , self.{}\n", field.name));
+        }
+        code.push_str("        )\n");
         code.push_str("    }\n");
         code.push_str("}\n");
 

@@ -12,8 +12,12 @@ pub mod inheritance;
 pub mod keys;
 pub mod model;
 pub mod model_final;
+pub mod receiver;
+pub mod sender;
 pub mod user_with_address;
 
 pub use buffer::{ReadBuffer, WriteBuffer};
 pub use field_model::FieldModel;
 pub use model::Model;
+pub use receiver::{Receiver, Deserialize};
+pub use sender::{Sender, Serialize};
