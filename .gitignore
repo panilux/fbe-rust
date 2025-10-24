@@ -21,6 +21,9 @@ out/
 .vscode/
 *.code-workspace
 
+# Claude Code
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
