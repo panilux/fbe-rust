@@ -438,8 +438,8 @@ impl WriteBuffer {
             Some(v) => {
                 self.write_u8(offset, 1);
                 let data_offset = self.allocate(4); // Allocate for i32
-                self.write_u32(offset + 1, data_offset as u32);
-                self.write_i32(data_offset, v);
+                self.write_u32(offset + 1, (data_offset - self.offset) as u32);
+                self.write_i32(data_offset - self.offset, v);
             }
         }
     }
@@ -451,8 +451,8 @@ impl WriteBuffer {
                 self.write_u8(offset, 1);
                 let len = v.len();
                 let data_offset = self.allocate(4 + len); // Allocate for length + string
-                self.write_u32(offset + 1, data_offset as u32);
-                self.write_string(data_offset, v);
+                self.write_u32(offset + 1, (data_offset - self.offset) as u32);
+                self.write_string(data_offset - self.offset, v);
             }
         }
     }
@@ -463,8 +463,8 @@ impl WriteBuffer {
             Some(v) => {
                 self.write_u8(offset, 1);
                 let data_offset = self.allocate(8); // Allocate for f64
-                self.write_u32(offset + 1, data_offset as u32);
-                self.write_f64(data_offset, v);
+                self.write_u32(offset + 1, (data_offset - self.offset) as u32);
+                self.write_f64(data_offset - self.offset, v);
             }
         }
     }
