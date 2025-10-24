@@ -24,6 +24,9 @@ out/
 # Claude Code
 .claude/
 
+# Documentation (local dev docs)
+_doc/
+
 # OS
 .DS_Store
 Thumbs.db
